@@ -162,11 +162,9 @@ export function ImageBody({ note }: { note: ImageNote }) {
         )}
       </div>
 
+      {/* 좁아지면 색·굵기 줄이 통째로 위로 올라가고 나머지가 아랫줄에 남는다.
+          그러려면 색·굵기가 **먼저** 와야 한다 — 플렉스는 순서대로 넘기기 때문이다. */}
       <div className="imagenote__foot">
-        <button type="button" className="imagenote__act" onClick={fitToImage} title="원본 비율로 맞추기">
-          {note.naturalW}×{note.naturalH}
-        </button>
-
         {drawing && (
           <span className="pen">
             {PEN_COLORS.map((c) => (
@@ -184,35 +182,58 @@ export function ImageBody({ note }: { note: ImageNote }) {
                 key={s}
                 type="button"
                 className={`pen__size${s === size ? ' pen__size--on' : ''}`}
-                title={['얇게', '보통', '굵게'][i]}
+                title={`${['얇게', '보통', '굵게'][i]} 그리기`}
                 onClick={() => setSize(s)}
               >
                 <span style={{ width: 3 + i * 3, height: 3 + i * 3 }} />
               </button>
             ))}
-            <button type="button" className="imagenote__act" onClick={undo} disabled={!strokes.length}>
-              한 획 지우기
-            </button>
-            <button type="button" className="imagenote__act" onClick={clear} disabled={!strokes.length}>
-              모두
-            </button>
           </span>
         )}
 
-        <span className="imagenote__gap" />
+        <span className="imagenote__row">
+          <button type="button" className="imagenote__act" onClick={fitToImage} title="원본 비율로 맞추기">
+            {note.naturalW}×{note.naturalH}
+          </button>
 
-        <button
-          type="button"
-          className="imagenote__act"
-          aria-pressed={drawing}
-          title="연필로 덧그리기 — 원본 파일은 그대로 둡니다"
-          onClick={() => setDrawing((v) => !v)}
-        >
-          <Icon name="pencil" />
-        </button>
-        <button type="button" className="imagenote__act" onClick={onCopy} disabled={!url}>
-          {copied ? '복사됨!' : '복사'}
-        </button>
+          <span className="imagenote__gap" />
+
+          {drawing && (
+            <>
+              <button
+                type="button"
+                className="imagenote__act"
+                onClick={undo}
+                disabled={!strokes.length}
+                title="마지막 획 지우기"
+              >
+                <Icon name="undo" />
+              </button>
+              <button
+                type="button"
+                className="imagenote__act"
+                onClick={clear}
+                disabled={!strokes.length}
+                title="덧그린 것 모두 지우기"
+              >
+                <Icon name="trash" />
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            className="imagenote__act"
+            aria-pressed={drawing}
+            title="연필로 덧그리기 — 원본 파일은 그대로 둡니다"
+            onClick={() => setDrawing((v) => !v)}
+          >
+            <Icon name="pencil" />
+          </button>
+          <button type="button" className="imagenote__act" onClick={onCopy} disabled={!url}>
+            {copied ? '복사됨!' : '복사'}
+          </button>
+        </span>
       </div>
     </div>
   )

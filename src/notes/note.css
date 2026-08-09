@@ -837,18 +837,36 @@
   line-height: 1.6;
 }
 
+/* 연필을 켜면 색·굵기 줄이 하나 더 붙는다. 노트가 좁으면 두 줄이 되도록 넘김을 허용한다. */
 .imagenote__foot {
   flex: 0 0 auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  gap: 2px 6px;
   padding: 2px 4px;
   border-top: 1px solid var(--line);
   color: var(--text-dim);
 }
 
+/* 색·굵기는 절대 쪼개지지 않는다. 넘어갈 때는 이 덩어리째 한 줄을 차지한다. */
+.imagenote__foot > .pen {
+  flex: 0 0 auto;
+}
+
+/* 나머지(크기·지우기·연필·복사)는 한 줄로 붙어 다닌다. */
+.imagenote__row {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .imagenote__act {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
   padding: 1px 4px;
   background: transparent;
   border: none;
@@ -877,8 +895,8 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  min-width: 0;
-  overflow-x: auto;
+  /* 여기서 줄이 나뉘면 색과 굵기가 따로 떨어져 무엇이 한 벌인지 알 수 없게 된다. */
+  flex-wrap: nowrap;
 }
 
 .pen__color {
