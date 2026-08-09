@@ -6,7 +6,7 @@
  *  선 위에 커서를 올리면 가위가 되고, 누르면 끊어진다. 끊긴 스티커는 그때 보이던
  *  자리 그대로 캔버스 배경에 남는다(detachSticker 가 좌표를 옮겨 준다). */
 import { useShallow } from 'zustand/react/shallow'
-import { useBoard, worldOf } from '../store/boardStore'
+import { anchorPointOf, useBoard, worldOf } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import './sticker.css'
 
@@ -23,7 +23,9 @@ export function StickerLinks() {
     .map((sticker) => {
       const note = notes[sticker.noteId as string]
       const from = worldOf(sticker, note)
-      const to = { x: note.x + note.w / 2, y: note.y + note.h / 2 }
+      // 선은 실제로 매달린 자리로 간다. 늘 한가운데로 그으면 어느 모서리를 기준으로
+      // 잡아 뒀는지 선만 봐서는 알 수 없다 — 노트를 늘렸을 때 어디로 따라갈지도 함께 읽힌다.
+      const to = anchorPointOf(note, sticker.anchor)
       const name = assets.find((a) => a.id === sticker.assetId)?.name ?? '스티커'
       return { id: sticker.id, from, to, name }
     })

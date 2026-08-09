@@ -160,6 +160,13 @@ function anchorOffset(note: Note, anchor: StickerAnchor): { x: number; y: number
   return { x: note.w * fx, y: note.h * fy }
 }
 
+/** 노트에서 그 기준점이 놓인 월드 좌표.
+ *  연결선이 노트 한가운데가 아니라 **실제로 매달린 모서리**로 가도록 할 때 쓴다. */
+export function anchorPointOf(note: Note, anchor: StickerAnchor): { x: number; y: number } {
+  const at = anchorOffset(note, anchor)
+  return { x: note.x + at.x, y: note.y + at.y }
+}
+
 /** 노트 좌상단에서 잰 스티커 중심의 자리. 노트 안쪽에 깔 때 이 좌표를 그대로 쓴다. */
 export function localOf(sticker: Sticker, note: Note): { x: number; y: number } {
   const at = anchorOffset(note, sticker.anchor)
