@@ -66,6 +66,17 @@
   overflow: hidden;
 }
 
+/* 노트 뒤에 깔린 스티커의 자리 표시. 보이기만 하고 잡히지는 않는다 —
+   누르면 그 아래 진짜 스티커가 받아야 하기 때문이다. */
+.stghost {
+  position: absolute;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  border-style: dashed;
+  border-color: var(--sel);
+  background: color-mix(in srgb, var(--sel) 8%, transparent);
+}
+
 /* ── 손잡이 ────────────────────────────────────────────────────────── */
 
 .sthandles {

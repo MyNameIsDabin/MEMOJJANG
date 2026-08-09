@@ -15,7 +15,7 @@ import {
   type StickerAsset,
   type StickerLayer as StickerLayerName,
 } from '../types'
-import { localOf, useBoard, worldOf } from '../store/boardStore'
+import { anchorFactors, useBoard, worldOf } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import { useUi } from '../store/uiStore'
 import { stickerUrl } from '../platform/stickers'
@@ -90,6 +90,57 @@ interface MoveState {
   moved: boolean
 }
 
+/** 스티커를 골라 끄는 손놀림. 캔버스 위에 놓인 것과 노트 안쪽에 깔린 것이 똑같이 움직여야 하므로
+ *  한 군데 모아 두고 둘이 나눠 쓴다. 꾸미는 중이 아니면 아무 손잡이도 내주지 않는다. */
+function useStickerDrag(id: string) {
+  const decorating = useUi((s) => s.decorating)
+  const move = useRef<MoveState | null>(null)
+
+  if (!decorating) return {}
+
+  return {
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.button !== 0) return
+      e.stopPropagation()
+      useUi.getState().pickSticker(id)
+      move.current = { pointerId: e.pointerId, lastX: e.clientX, lastY: e.clientY, moved: false }
+      e.currentTarget.setPointerCapture(e.pointerId)
+    },
+
+    onPointerMove: (e: React.PointerEvent) => {
+      const m = move.current
+      if (!m || m.pointerId !== e.pointerId) return
+      // 창 밖에서 손을 뗀 경우를 놓치지 않는다.
+      if (e.buttons === 0) {
+        move.current = null
+        return
+      }
+      if (!m.moved && Math.abs(e.clientX - m.lastX) < 3 && Math.abs(e.clientY - m.lastY) < 3) return
+      // 되돌리기 지점은 실제로 움직이기 시작할 때 한 번만 남긴다.
+      if (!m.moved) useBoard.getState().commit()
+      m.moved = true
+
+      const { zoom } = useBoard.getState().viewport
+      const dx = (e.clientX - m.lastX) / zoom
+      const dy = (e.clientY - m.lastY) / zoom
+      m.lastX = e.clientX
+      m.lastY = e.clientY
+      const cur = useBoard.getState().stickers[id]
+      if (cur) useBoard.getState().patchSticker(id, { x: cur.x + dx, y: cur.y + dy })
+    },
+
+    onPointerUp: (e: React.PointerEvent) => {
+      if (move.current?.pointerId !== e.pointerId) return
+      move.current = null
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+    },
+
+    onPointerCancel: () => {
+      move.current = null
+    },
+  }
+}
+
 function StickerView({ id, layer }: { id: string; layer: StickerLayerName }) {
   const sticker = useBoard((s) => s.stickers[id])
   const note = useBoard((s) => (sticker?.noteId ? s.notes[sticker.noteId] : undefined))
@@ -97,42 +148,7 @@ function StickerView({ id, layer }: { id: string; layer: StickerLayerName }) {
   const decorating = useUi((s) => s.decorating)
   const active = useUi((s) => s.activeStickerId === id)
   const url = useStickerUrl(asset?.file)
-  const move = useRef<MoveState | null>(null)
-
-  const onDown = (e: React.PointerEvent) => {
-    if (!decorating || e.button !== 0) return
-    e.stopPropagation()
-    useUi.getState().pickSticker(id)
-    move.current = { pointerId: e.pointerId, lastX: e.clientX, lastY: e.clientY, moved: false }
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-
-  const onMove = (e: React.PointerEvent) => {
-    const m = move.current
-    if (!m || m.pointerId !== e.pointerId) return
-    // 창 밖에서 손을 뗀 경우를 놓치지 않는다.
-    if (e.buttons === 0) {
-      move.current = null
-      return
-    }
-    const { zoom } = useBoard.getState().viewport
-    const dx = (e.clientX - m.lastX) / zoom
-    const dy = (e.clientY - m.lastY) / zoom
-    if (!m.moved && Math.abs(e.clientX - m.lastX) < 3 && Math.abs(e.clientY - m.lastY) < 3) return
-    // 되돌리기 지점은 실제로 움직이기 시작할 때 한 번만 남긴다.
-    if (!m.moved) useBoard.getState().commit()
-    m.moved = true
-    m.lastX = e.clientX
-    m.lastY = e.clientY
-    const cur = useBoard.getState().stickers[id]
-    if (cur) useBoard.getState().patchSticker(id, { x: cur.x + dx, y: cur.y + dy })
-  }
-
-  const onUp = (e: React.PointerEvent) => {
-    if (move.current?.pointerId !== e.pointerId) return
-    move.current = null
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
-  }
+  const handlers = useStickerDrag(id)
 
   // 자기 켜가 아니면 그리지 않는다. '본문 밑' 은 노트가 직접 그린다(NoteShell).
   if (!sticker || !asset || layerOf(sticker) !== layer) return null
@@ -153,10 +169,7 @@ function StickerView({ id, layer }: { id: string; layer: StickerLayerName }) {
         height: h,
         transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
       }}
-      onPointerDown={onDown}
-      onPointerMove={onMove}
-      onPointerUp={onUp}
-      onPointerCancel={onUp}
+      {...handlers}
     >
       {url ? (
         <img
@@ -173,29 +186,44 @@ function StickerView({ id, layer }: { id: string; layer: StickerLayerName }) {
   )
 }
 
-/** 노트 안쪽(본문 밑)에 깔리는 스티커들. NoteShell 이 자기 안에 그린다. */
+/** 노트 안쪽(본문 밑)에 깔리는 스티커들. NoteShell 이 자기 안에 그린다.
+ *
+ *  기준점은 저장된 w·h 가 아니라 **실제로 그려진 크기**에서 잰다. 화면 가득 펼친 노트는
+ *  자리와 크기를 CSS 가 정하므로 저장된 값과 전혀 다르고, 그대로 쓰면 스티커만 옛 자리에 남는다. */
 export function NoteStickers({ noteId }: { noteId: string }) {
   const ids = useBoard(useShallow((s) => s.stickerIds))
   const stickers = useBoard((s) => s.stickers)
-  const note = useBoard((s) => s.notes[noteId])
   const assets = useSettings((s) => s.stickerAssets)
+
+  const ref = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState({ w: 0, h: 0 })
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const measure = () => setBox({ w: el.clientWidth, h: el.clientHeight })
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   const mine = ids
     .map((id) => stickers[id])
     .filter((s) => s?.noteId === noteId && layerOf(s) === 'body')
 
-  if (!mine.length) return null
-
+  // 스티커가 없어도 자리는 남겨 둔다 — 여기를 재야 나중에 붙는 스티커도 제자리에 온다.
   return (
-    <div className="note__deco" aria-hidden>
-      {mine.map((sticker) => (
-        <NoteSticker
-          key={sticker.id}
-          sticker={sticker}
-          note={note}
-          asset={assets.find((a) => a.id === sticker.assetId)}
-        />
-      ))}
+    <div className="note__deco" ref={ref}>
+      {box.w > 0 &&
+        mine.map((sticker) => (
+          <NoteSticker
+            key={sticker.id}
+            sticker={sticker}
+            box={box}
+            asset={assets.find((a) => a.id === sticker.assetId)}
+          />
+        ))}
     </div>
   )
 }
@@ -203,34 +231,35 @@ export function NoteStickers({ noteId }: { noteId: string }) {
 function NoteSticker({
   sticker,
   asset,
-  note,
+  box,
 }: {
   sticker: Sticker
   asset: StickerAsset | undefined
-  note: Note | undefined
+  box: { w: number; h: number }
 }) {
   const url = useStickerUrl(asset?.file)
-  if (!asset || !url || !note) return null
+  const active = useUi((s) => s.activeStickerId === sticker.id)
+  const decorating = useUi((s) => s.decorating)
+  const handlers = useStickerDrag(sticker.id)
+
+  if (!asset || !url) return null
   const { w, h } = sizeOf(asset)
-  // 노트 안쪽이라 좌상단에서 잰 자리를 그대로 쓴다. 기준점 계산은 localOf 가 맡는다.
-  const at = localOf(sticker, note)
+  const { fx, fy } = anchorFactors(sticker.anchor)
 
   return (
-    <img
-      className="sticker__img"
-      src={url}
-      alt=""
-      draggable={false}
+    <div
+      className={`sticker sticker--inset${active ? ' sticker--on' : ''}${decorating ? ' sticker--live' : ''}`}
       style={{
-        position: 'absolute',
-        left: at.x,
-        top: at.y,
+        left: box.w * fx + sticker.x,
+        top: box.h * fy + sticker.y,
         width: w,
         height: h,
         transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
-        ...paintOf(sticker),
       }}
-    />
+      {...handlers}
+    >
+      <img className="sticker__img" src={url} alt="" draggable={false} style={paintOf(sticker)} />
+    </div>
   )
 }
 

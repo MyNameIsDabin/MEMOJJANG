@@ -12,6 +12,7 @@ import { files } from '../platform/files'
 import { isTauri } from '../platform/env'
 import { isTextField } from '../utils/dom'
 import { describeError, notify } from '../ui/toast'
+import { isNoteClip, pasteNotes } from './clip'
 
 async function measure(blob: Blob): Promise<{ width: number; height: number }> {
   try {
@@ -34,9 +35,17 @@ export async function addImageBlob(blob: Blob, world: { x: number; y: number }):
 
 /** 붙여넣은 글자를 어디로 보낼지 정한다.
  *
+ *  메모지를 통째로 복사해 둔 것이면 노트로 되살린다 — 우리가 담은 표식이 붙어 있다.
  *  바로가기 노트 하나만 골라 둔 채로 주소를 붙이면, 새 노트를 만드는 대신 그 목록에 넣는다.
  *  주소를 모으는 중에 붙여넣기를 했다면 십중팔구 그 뜻이기 때문이다. */
 export function addTextClip(text: string, world: { x: number; y: number }): void {
+  if (isNoteClip(text)) {
+    void pasteNotes(text, world).catch((err) => {
+      console.error('[clip] 메모지 붙여넣기 실패', err)
+      notify(`메모지를 붙여넣지 못했습니다 — ${describeError(err)}`, 'error')
+    })
+    return
+  }
   if (appendToSelectedLinkNote(text)) return
   useBoard.getState().addMemo(text, world)
 }

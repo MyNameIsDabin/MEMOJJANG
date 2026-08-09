@@ -4,6 +4,7 @@ import { toWorld, useBoard } from '../store/boardStore'
 import { useUi } from '../store/uiStore'
 import { addImageFromFile, pasteFromClipboard } from '../actions/paste'
 import { arrangeGrid, zoomToFit } from '../actions/layout'
+import { copyNotes } from '../actions/clip'
 import { beginCapture } from '../platform/capture'
 import { isTauri } from '../platform/env'
 import { describeError, notify } from './toast'
@@ -28,6 +29,7 @@ export interface MenuAnchor {
 export function BoardMenu({ anchor, onClose }: { anchor: MenuAnchor; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ left: anchor.screenX, top: anchor.screenY })
+  const selection = useBoard((s) => s.selection)
 
   // 화면 밖으로 삐져나가면 안쪽으로 당긴다.
   useLayoutEffect(() => {
@@ -91,6 +93,15 @@ export function BoardMenu({ anchor, onClose }: { anchor: MenuAnchor; onClose: ()
 
       <div className="menu__sep" />
 
+      <button
+        className="menu__item"
+        disabled={!selection.length}
+        onClick={run(() => void copyNotes(useBoard.getState().selection))}
+        title="고른 메모지를 통째로 복사합니다"
+      >
+        <span className="menu__key">메모지 복사하기</span>
+        <span className="menu__hint">Ctrl+C</span>
+      </button>
       <button className="menu__item" onClick={run(() => void pasteFromClipboard(world()))}>
         <span className="menu__key">여기에 붙여넣기</span>
         <span className="menu__hint">Ctrl+V</span>

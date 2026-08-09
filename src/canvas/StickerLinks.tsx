@@ -7,8 +7,53 @@
  *  자리 그대로 캔버스 배경에 남는다(detachSticker 가 좌표를 옮겨 준다). */
 import { useShallow } from 'zustand/react/shallow'
 import { anchorPointOf, useBoard, worldOf } from '../store/boardStore'
+import { layerOf, sizeOf } from './StickerLayer'
 import { useSettings } from '../store/settingsStore'
 import './sticker.css'
+
+/** 노트 뒤에 놓인 스티커의 자리를 알려 주는 실루엣.
+ *
+ *  뒤에 깔린 스티커는 노트에 가려 어디 있는지 보이지 않는다. 꾸미는 동안 노트는 잠겨
+ *  이벤트를 그냥 흘려보내므로 **누르는 것은 이미 되는데**, 눈에 보이지 않아 누를 엄두를
+ *  못 낼 뿐이다. 그래서 자리만 윤곽으로 띄운다 — 누르는 건 아래 진짜 스티커가 받는다. */
+export function StickerSilhouettes() {
+  const stickerIds = useBoard(useShallow((s) => s.stickerIds))
+  const stickers = useBoard((s) => s.stickers)
+  const notes = useBoard((s) => s.notes)
+  const zoom = useBoard((s) => s.viewport.zoom)
+  const assets = useSettings((s) => s.stickerAssets)
+
+  return (
+    <>
+      {stickerIds.map((id) => {
+        const sticker = stickers[id]
+        if (!sticker || layerOf(sticker) !== 'behind') return null
+        const asset = assets.find((a) => a.id === sticker.assetId)
+        if (!asset) return null
+        const note = sticker.noteId ? notes[sticker.noteId] : undefined
+        if (sticker.noteId && !note) return null
+
+        const at = worldOf(sticker, note)
+        const { w, h } = sizeOf(asset)
+        return (
+          <div
+            key={id}
+            className="stghost"
+            style={{
+              left: at.x,
+              top: at.y,
+              width: w,
+              height: h,
+              transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
+              // 배율과 스티커 크기를 되돌려야 화면에서 늘 같은 굵기로 보인다.
+              borderWidth: Math.max(1, 2 / (zoom * sticker.scale)),
+            }}
+          />
+        )
+      })}
+    </>
+  )
+}
 
 export function StickerLinks() {
   const stickerIds = useBoard(useShallow((s) => s.stickerIds))

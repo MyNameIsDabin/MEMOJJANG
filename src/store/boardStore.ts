@@ -152,11 +152,20 @@ function baseNote(kind: NoteKind, world: { x: number; y: number }, z: number) {
   }
 }
 
+/** 기준점이 노트의 어느 지점인가 — 0 이면 왼쪽/위, 1 이면 오른쪽/아래.
+ *  크기만 주면 어디서든 쓸 수 있어야 한다. 화면 가득 펼친 노트는 저장된 w·h 가 아니라
+ *  실제로 그려진 크기를 기준으로 삼아야 하기 때문이다. */
+export function anchorFactors(anchor: StickerAnchor): { fx: number; fy: number } {
+  return {
+    fx: anchor === 'ne' || anchor === 'se' ? 1 : anchor === 'center' ? 0.5 : 0,
+    fy: anchor === 'sw' || anchor === 'se' ? 1 : anchor === 'center' ? 0.5 : 0,
+  }
+}
+
 /** 기준점이 노트 좌상단에서 얼마나 떨어져 있는가.
  *  노트 크기가 바뀌면 이 값이 따라 바뀌고, 그래서 스티커가 모서리를 따라간다. */
 function anchorOffset(note: Note, anchor: StickerAnchor): { x: number; y: number } {
-  const fx = anchor === 'ne' || anchor === 'se' ? 1 : anchor === 'center' ? 0.5 : 0
-  const fy = anchor === 'sw' || anchor === 'se' ? 1 : anchor === 'center' ? 0.5 : 0
+  const { fx, fy } = anchorFactors(anchor)
   return { x: note.w * fx, y: note.h * fy }
 }
 

@@ -9,7 +9,7 @@ import { BoardMenu, type MenuAnchor } from '../ui/BoardMenu'
 import { StickerPicker } from '../ui/StickerPicker'
 import { StickerLayer } from './StickerLayer'
 import { StickerHandles } from './StickerHandles'
-import { StickerLinks } from './StickerLinks'
+import { StickerLinks, StickerSilhouettes } from './StickerLinks'
 import { useSnapGhost } from './snapGhost'
 import { useUi } from '../store/uiStore'
 import { handleDrop, shouldHandleDrop } from '../actions/drop'
@@ -309,6 +309,7 @@ export function Board() {
 
         {decorating && (
           <div className="stickers stickers--ui">
+            <StickerSilhouettes />
             <StickerLinks />
             {activeStickerId && <StickerHandles id={activeStickerId} />}
           </div>

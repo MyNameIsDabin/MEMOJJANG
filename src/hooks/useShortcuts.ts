@@ -5,6 +5,7 @@ import { useUi } from '../store/uiStore'
 import { dropPoint } from '../canvas/pointer'
 import { handlePasteEvent, schedulePasteFallback } from '../actions/paste'
 import { arrangeGrid, zoomToFit } from '../actions/layout'
+import { copyNotes } from '../actions/clip'
 import { isTextField } from '../utils/dom'
 
 export function useShortcuts(): void {
@@ -116,6 +117,13 @@ export function useShortcuts(): void {
       if (mod && e.key.toLowerCase() === 'y') {
         e.preventDefault()
         board.redo()
+        return
+      }
+
+      // 메모지 자체를 통째로 복사한다. 글자를 고르고 있을 때는 그쪽이 먼저다(위에서 걸러짐).
+      if (mod && e.key.toLowerCase() === 'c' && board.selection.length) {
+        e.preventDefault()
+        void copyNotes(board.selection)
         return
       }
 
