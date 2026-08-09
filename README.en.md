@@ -1,4 +1,4 @@
-[한국어](README.md) · **English**
+[한국어](README.md) · **English** · [日本語](README.ja.md)
 
 # Memojjang (메모짱)
 
