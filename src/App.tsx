@@ -96,7 +96,7 @@ function EmptyHint() {
             아무거나 복사한 뒤 <b>Ctrl+V</b> — 그림도 그대로 붙습니다
           </li>
           <li>
-            <b>휠</b>로 확대·축소, <b>빈 곳 드래그</b>로 이동
+            <b>휠</b>로 밀고, <b>Ctrl+휠</b>로 확대·축소
           </li>
         </ul>
         <button className="btn hint__go" onClick={() => useBoard.getState().addNote('memo', dropPoint())}>

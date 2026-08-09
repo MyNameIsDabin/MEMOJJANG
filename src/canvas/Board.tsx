@@ -12,8 +12,7 @@ import './board.css'
 
 /** 커서 밑에 "그 방향으로 더 굴릴 수 있는" 칸이 있는가.
  *
- *  끝까지 굴린 뒤에는 다시 확대/축소로 넘겨줘야 한다. 그러지 않으면 긴 메모 위에서는
- *  캔버스 확대가 영영 막힌다. */
+ *  끝까지 굴렸으면 그때부터는 캔버스를 민다. 브라우저에서 겹친 스크롤 칸이 하는 것과 같다. */
 function canScrollHere(
   target: EventTarget | null,
   axis: 'x' | 'y',
@@ -103,20 +102,29 @@ export function Board() {
     if (!el) return
 
     const onWheel = (e: WheelEvent) => {
+      /* 확대/축소는 Ctrl 을 누른 채로만 한다.
+         그냥 휠에 배율을 걸어 두면, 긴 메모를 끝까지 굴린 순간 배율이 튀어 버린다.
+         굴리던 손 그대로 화면이 확 커지는 건 손 쓸 새도 없이 벌어져서 되돌리기도 번거롭다.
+         노트 안을 굴리는 것보다도 먼저 본다 — 여기서 막지 않으면 웹뷰가 창 전체를 확대한다. */
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        // deltaY 는 장치마다 단위가 달라서 방향만 취하고 배율은 우리가 정한다.
+        useBoard.getState().zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * 0.12))
+        return
+      }
+
       // 내용이 넘쳐 스크롤이 생긴 노트 위에서는 그 안을 굴리는 게 먼저다.
       // 여기서 preventDefault 를 하지 않고 빠지면 브라우저가 알아서 그 칸을 굴린다
       // (Shift 를 누른 채면 브라우저가 좌우로 굴려 준다).
       if (canScrollHere(e.target, e.shiftKey ? 'x' : 'y', e.deltaY, el)) return
 
       e.preventDefault()
-      const { zoomAt, setViewport } = useBoard.getState()
-      if (e.shiftKey) {
-        setViewport((vp) => ({ ...vp, x: vp.x - e.deltaY }))
-        return
-      }
-      // deltaY 는 장치마다 단위가 달라서 방향만 취하고 배율은 우리가 정한다.
-      const factor = Math.exp(-Math.sign(e.deltaY) * 0.12)
-      zoomAt(e.clientX, e.clientY, factor)
+      // 남은 휠은 전부 화면을 미는 데 쓴다. deltaX 는 가로 휠·터치패드에서 들어온다.
+      useBoard.getState().setViewport((vp) =>
+        e.shiftKey
+          ? { ...vp, x: vp.x - e.deltaY - e.deltaX }
+          : { ...vp, x: vp.x - e.deltaX, y: vp.y - e.deltaY },
+      )
     }
 
     // 가운데 버튼을 누르면 Chromium 이 자동 스크롤 모드로 들어가면서 뒤따르는 마우스 이동을
