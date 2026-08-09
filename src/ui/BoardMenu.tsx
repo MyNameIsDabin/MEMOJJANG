@@ -4,7 +4,21 @@ import { toWorld, useBoard } from '../store/boardStore'
 import { useUi } from '../store/uiStore'
 import { addImageFromFile, pasteFromClipboard } from '../actions/paste'
 import { arrangeGrid, zoomToFit } from '../actions/layout'
+import { beginCapture } from '../platform/capture'
+import { isTauri } from '../platform/env'
+import { describeError, notify } from './toast'
 import './menu.css'
+
+/** 화면을 얼려 놓고 캡처 화면으로 넘어간다. 창을 넓히는 일은 Rust 가 맡는다. */
+async function startCapture(world: { x: number; y: number }): Promise<void> {
+  try {
+    const shot = await beginCapture()
+    useUi.getState().startCapture(shot, world)
+  } catch (err) {
+    console.error('[capture] 시작 실패', err)
+    notify(`화면을 캡처하지 못했습니다 — ${describeError(err)}`, 'error')
+  }
+}
 
 export interface MenuAnchor {
   screenX: number
@@ -65,6 +79,14 @@ export function BoardMenu({ anchor, onClose }: { anchor: MenuAnchor; onClose: ()
       </button>
       <button className="menu__item" onClick={run(() => void addImageFromFile(world()))}>
         <span className="menu__key">그림 불러오기…</span>
+      </button>
+      <button
+        className="menu__item"
+        disabled={!isTauri()}
+        onClick={run(() => void startCapture(world()))}
+        title="바탕화면의 원하는 자리를 끌어서 담습니다"
+      >
+        <span className="menu__key">캡처해서 가져오기</span>
       </button>
 
       <div className="menu__sep" />

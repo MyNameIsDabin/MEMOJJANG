@@ -3,6 +3,7 @@
  *
  *  여기 있는 것은 전부 그때그때의 화면 상태다 — 파일에 남지 않는다. */
 import { create } from 'zustand'
+import type { Shot as CaptureShot } from '../platform/capture'
 
 interface UiState {
   search: boolean
@@ -13,6 +14,9 @@ interface UiState {
   renamingNoteId: string | null
   /** 화면 가득 펼쳐 놓은 노트. 없으면 평소대로 캔버스만 보인다. */
   fullscreenNoteId: string | null
+
+  /** 화면 캡처 중. 얼려 둔 그림과, 잘라낸 것을 놓을 자리를 함께 들고 있는다. */
+  capture: { shot: CaptureShot; world: { x: number; y: number } } | null
 
   /** 꾸미기 모드 — 노트는 잠기고 스티커만 만진다. */
   decorating: boolean
@@ -33,6 +37,8 @@ interface UiState {
   /** 펼쳐 보고 있을 때만 대상을 갈아 끼운다. 아니면 아무 일도 하지 않는다. */
   followFullscreen: (id: string) => void
 
+  startCapture: (shot: CaptureShot, world: { x: number; y: number }) => void
+  stopCapture: () => void
   toggleDecorating: () => void
   stopDecorating: () => void
   pickSticker: (id: string | null) => void
@@ -44,6 +50,7 @@ export const useUi = create<UiState>()((set) => ({
   noteList: false,
   renamingNoteId: null,
   fullscreenNoteId: null,
+  capture: null,
   decorating: false,
   activeStickerId: null,
 
@@ -65,6 +72,9 @@ export const useUi = create<UiState>()((set) => ({
   expandNote: (id) => set({ fullscreenNoteId: id }),
   collapseNote: () => set({ fullscreenNoteId: null }),
   followFullscreen: (id) => set((s) => (s.fullscreenNoteId ? { fullscreenNoteId: id } : {})),
+
+  startCapture: (shot, world) => set({ capture: { shot, world }, search: false, noteList: false, settings: false }),
+  stopCapture: () => set({ capture: null }),
 
   // 꾸미는 동안에는 노트를 펼쳐 놓을 수 없다 — 캔버스가 안 보이면 붙일 자리도 없다.
   toggleDecorating: () =>

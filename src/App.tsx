@@ -7,6 +7,7 @@ import { SettingsPanel } from './ui/SettingsPanel'
 import { SearchPanel } from './ui/SearchPanel'
 import { NoteStage } from './ui/NoteStage'
 import { StickerBar } from './ui/StickerBar'
+import { CaptureOverlay } from './ui/CaptureOverlay'
 import { Toasts } from './ui/Toasts'
 import { useBoard } from './store/boardStore'
 import { useCanvases } from './store/canvasStore'
@@ -28,6 +29,7 @@ export default function App() {
   const fullscreenNoteId = useUi((s) => s.fullscreenNoteId)
   const decorating = useUi((s) => s.decorating)
   const activeStickerId = useUi((s) => s.activeStickerId)
+  const capture = useUi((s) => s.capture)
 
   useEffect(() => {
     // 구독을 먼저 걸어야 아래의 hydrate 가 설정 반영을 놓치지 않는다.
@@ -59,6 +61,14 @@ export default function App() {
         <TitleBar />
       </div>
       <Footer />
+
+      {capture && (
+        <CaptureOverlay
+          shot={capture.shot}
+          world={capture.world}
+          onDone={useUi.getState().stopCapture}
+        />
+      )}
 
       {decorating && <DecorateHint />}
       {decorating && activeStickerId && <StickerBar id={activeStickerId} />}

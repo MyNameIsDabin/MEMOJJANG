@@ -1,4 +1,6 @@
 #[cfg(desktop)]
+mod capture;
+#[cfg(desktop)]
 mod clipboard_watch;
 mod files;
 #[cfg(desktop)]
@@ -90,7 +92,10 @@ pub fn run() {
             files::file_exists,
             files::rename_path,
             files::reveal_in_explorer,
-            net::download_image
+            net::download_image,
+            capture::begin_capture,
+            capture::crop_capture,
+            capture::end_capture
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
