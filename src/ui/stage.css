@@ -1,0 +1,30 @@
+/* 노트 한 장을 화면 가득 펼쳐 놓는 자리.
+   캔버스를 완전히 덮어야 하므로 바탕색을 직접 칠한다 — 비쳐 보이면 글이 읽히지 않는다. */
+
+.stage {
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* 제목 줄과 상태 줄 높이는 글자 크기에 따라 달라진다. App 에서 재서 넣어 준다. */
+  top: var(--chrome-h, 60px);
+  bottom: var(--footer-h, 24px);
+  z-index: 150;
+  display: flex;
+  padding: 8px;
+  background: var(--canvas);
+}
+
+/* 캔버스 위에 있을 때와 달리 자리·크기를 CSS 가 정한다.
+   그래야 창을 늘리는 것만으로 본문이 따라 늘어난다. */
+.note--expanded {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  /* 펼쳐 놓은 노트는 하나뿐이라 그림자가 뜬금없다. 테두리만 남긴다. */
+  box-shadow: none;
+}
+
+.note--expanded .note__bar {
+  cursor: default;
+}

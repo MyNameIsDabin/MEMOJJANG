@@ -23,6 +23,9 @@ tauri-plugin-fs = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-dialog = "2"
+# 새 판이 나왔는지 보고 받아서 깔기. 깐 뒤 앱을 다시 띄우는 데 process 가 필요하다.
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 serde = { version = "1", features = ["derive"] }
 # 이미지 바이트를 IPC 로 실어 나르기 위해 (files.rs 참고)
 base64 = "0.22"

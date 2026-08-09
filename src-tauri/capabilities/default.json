@@ -37,6 +37,9 @@
     "dialog:allow-save",
     "dialog:allow-message",
 
+    "updater:default",
+    "process:allow-restart",
+
     "opener:default",
     {
       "identifier": "opener:allow-open-path",

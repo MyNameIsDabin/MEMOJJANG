@@ -26,6 +26,9 @@
 
 ```powershell
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"   # cargo 가 PATH 에 없는 셸이 있습니다
+# 판올림 파일 서명 열쇠. 없으면 번들은 다 만들어지고 맨 끝 서명 단계에서만 실패합니다.
+$env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content "$env:USERPROFILE\.memojjang\updater.key" -Raw).Trim()
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = (Get-Content "$env:USERPROFILE\.memojjang\updater.password" -Raw).Trim()
 npm run tauri build
 ```
 
@@ -55,6 +58,14 @@ git tag v0.2.0 && git push origin v0.2.0
 
 `.github/workflows/release.yml` 이 윈도우에서 빌드해 Releases 에 **초안**으로 올립니다.
 내용을 확인하고 GitHub 에서 직접 Publish 를 눌러야 공개됩니다.
+
+**앱 안의 판올림은 Publish 한 뒤에야 동작합니다.** 초안에 붙은 `latest.json` 은
+`releases/latest/download` 로 잡히지 않기 때문입니다.
+
+판올림 서명 열쇠는 `%USERPROFILE%\.memojjang\` 에 있고 저장소에는 없습니다.
+같은 열쇠가 GitHub 시크릿(`TAURI_SIGNING_PRIVATE_KEY`, `..._PASSWORD`)에도 들어가 있습니다.
+**이 열쇠를 잃으면 이미 설치된 앱들이 더는 판올림을 받지 못합니다** — 새 열쇠로 서명한 것은
+옛 공개키로 확인되지 않고, 사람들이 직접 새로 받아 깔아야 합니다. 옮기거나 지우지 마세요.
 
 ## 코드에서 지키는 것
 

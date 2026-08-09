@@ -26,6 +26,9 @@ export type IconName =
   | 'grip'
   | 'clock'
   | 'undo'
+  | 'expand'
+  | 'shrink'
+  | 'download'
   | 'winMinimize'
   | 'winMaximize'
   | 'winRestore'
@@ -77,6 +80,17 @@ const PATHS: Record<IconName, string> = {
 
   // 왼쪽으로 되돌아가는 화살표 — 기본값으로 돌리기
   undo: 'M4,7h7v2h-7zM2,7h2v2h-2zM4,5h2v2h-2zM4,9h2v2h-2zM9,9h2v4h-2z',
+
+  // 네 귀퉁이로 뻗는 화살촉 — 화면 가득 펼치기.
+  // 대각선 대신 귀퉁이 꺾쇠로 그려야 16px 에서 뭉개지지 않는다.
+  expand: 'M1,1h6v2h-4v4h-2zM9,1h6v6h-2v-4h-4zM1,9h2v4h4v2h-6zM13,9h2v6h-6v-2h4z',
+
+  // 안쪽으로 모이는 꺾쇠 — 원래 크기로
+  shrink: 'M5,1h2v6h-6v-2h4zM9,1h2v4h4v2h-6zM1,9h6v6h-2v-4h-4zM9,9h6v2h-4v4h-2z',
+
+  // 아래로 향한 화살표와 받침 — 내려받기.
+  // 화살촉은 대각선 대신 한 칸씩 좁아지는 계단으로 그린다(위 규칙).
+  download: 'M7,2h2v6h-2zM4,8h8v1h-8zM5,9h6v1h-6zM6,10h4v1h-4zM7,11h2v1h-2zM2,13h12v2h-12z',
 
   winMinimize: 'M3,8h10v1h-10z',
   winMaximize: 'M3,3h10v10h-10zM4,4h8v8h-8z',

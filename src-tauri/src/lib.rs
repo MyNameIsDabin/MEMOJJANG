@@ -53,6 +53,8 @@ pub fn run() {
             {
                 _app.handle()
                     .plugin(tauri_plugin_global_shortcut::Builder::new().build())?;
+                _app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+                _app.handle().plugin(tauri_plugin_process::init())?;
                 tray::init(_app.handle())?;
                 clipboard_watch::spawn(_app.handle().clone());
                 // 설정을 읽은 프론트가 곧 정확한 값으로 다시 걸어 준다.

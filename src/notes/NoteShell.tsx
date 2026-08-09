@@ -45,7 +45,10 @@ interface ResizeState {
   axis: 'se' | 'e' | 's'
 }
 
-export function NoteShell({ id }: { id: string }) {
+/** `expanded` 는 캔버스를 떠나 화면 가득 펼쳐 놓은 상태다.
+ *  자리와 크기를 CSS 에 넘기므로 창을 늘리면 본문도 따라 늘어난다.
+ *  옮기기·크기 조절·접기는 이 상태에서 뜻이 없으니 내놓지 않는다. */
+export function NoteShell({ id, expanded = false }: { id: string; expanded?: boolean }) {
   const note = useBoard((s) => s.notes[id])
   const selected = useBoard((s) => s.selection.includes(id))
   const snapToGrid = useSettings((s) => s.snapToGrid)
@@ -225,23 +228,38 @@ export function NoteShell({ id }: { id: string }) {
 
   const toggleCollapsed = () => useBoard.getState().patchNote(id, { collapsed: !note.collapsed })
 
+  // 펼쳐 놓았을 때는 접힘도 무시한다 — 화면을 다 내주고 제목만 남는 건 앞뒤가 안 맞는다.
+  const collapsed = note.collapsed && !expanded
+
   return (
     <div
-      className={`note note--${note.kind}${selected ? ' note--selected' : ''}${note.collapsed ? ' note--collapsed' : ''}`}
-      style={{
-        left: note.x,
-        top: note.y,
-        width: note.w,
-        height: note.collapsed ? undefined : note.h,
-        zIndex: note.z,
-        // 제목 표시줄 색. 노트마다 다르게 줄 수 있어 한눈에 구분된다.
-        ['--note-accent' as string]: `var(--accent-${note.accent})`,
-      }}
+      className={[
+        'note',
+        `note--${note.kind}`,
+        selected && !expanded ? 'note--selected' : '',
+        collapsed ? 'note--collapsed' : '',
+        expanded ? 'note--expanded' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={
+        expanded
+          ? { ['--note-accent' as string]: `var(--accent-${note.accent})` }
+          : {
+              left: note.x,
+              top: note.y,
+              width: note.w,
+              height: collapsed ? undefined : note.h,
+              zIndex: note.z,
+              // 제목 표시줄 색. 노트마다 다르게 줄 수 있어 한눈에 구분된다.
+              ['--note-accent' as string]: `var(--accent-${note.accent})`,
+            }
+      }
       // 제목 표시줄은 beginDrag 가 전파를 끊으므로 여기까지 오지 않는다.
       // 즉 이 핸들러는 본문을 눌렀을 때만 돈다.
       onPointerDown={(e) => {
         // 휠 클릭은 화면을 옮기려는 것이므로 캔버스에 넘긴다.
-        if (e.button !== 0) return
+        if (e.button !== 0 || expanded) return
         const board = useBoard.getState()
         board.raise(id)
         if (!e.shiftKey && !board.selection.includes(id)) board.select([id])
@@ -249,11 +267,11 @@ export function NoteShell({ id }: { id: string }) {
     >
       <div
         className="note__bar"
-        onPointerDown={beginDrag}
-        onPointerMove={onDragMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onDoubleClick={toggleCollapsed}
+        onPointerDown={expanded ? undefined : beginDrag}
+        onPointerMove={expanded ? undefined : onDragMove}
+        onPointerUp={expanded ? undefined : endDrag}
+        onPointerCancel={expanded ? undefined : endDrag}
+        onDoubleClick={expanded ? undefined : toggleCollapsed}
       >
         <button type="button" className="note__swatch" title="색 바꾸기" onClick={cycleAccent} />
 
@@ -294,11 +312,26 @@ export function NoteShell({ id }: { id: string }) {
         <button
           type="button"
           className="note__ctl"
-          title={note.collapsed ? '펼치기' : '접기'}
-          onClick={toggleCollapsed}
+          title={expanded ? '캔버스로 돌아가기 (Esc)' : '화면 가득 펼치기'}
+          aria-pressed={expanded}
+          onClick={() =>
+            expanded ? useUi.getState().collapseNote() : useUi.getState().expandNote(id)
+          }
         >
-          <Icon name={note.collapsed ? 'winMaximize' : 'collapse'} />
+          <Icon name={expanded ? 'shrink' : 'expand'} />
         </button>
+
+        {!expanded && (
+          <button
+            type="button"
+            className="note__ctl"
+            title={note.collapsed ? '펼치기' : '접기'}
+            onClick={toggleCollapsed}
+          >
+            <Icon name={note.collapsed ? 'winMaximize' : 'collapse'} />
+          </button>
+        )}
+
         <button
           type="button"
           className="note__ctl note__ctl--close"
@@ -309,7 +342,7 @@ export function NoteShell({ id }: { id: string }) {
         </button>
       </div>
 
-      {!note.collapsed && (
+      {!collapsed && (
         <>
           <div className="note__body">
             {note.kind === 'todo' && <TodoBody note={note} />}
@@ -318,16 +351,17 @@ export function NoteShell({ id }: { id: string }) {
             {note.kind === 'link' && <LinkBody note={note} />}
           </div>
 
-          {(['e', 's', 'se'] as const).map((axis) => (
-            <div
-              key={axis}
-              className={`note__grip note__grip--${axis}`}
-              onPointerDown={beginResize(axis)}
-              onPointerMove={onResizeMove}
-              onPointerUp={endResize}
-              onPointerCancel={endResize}
-            />
-          ))}
+          {!expanded &&
+            (['e', 's', 'se'] as const).map((axis) => (
+              <div
+                key={axis}
+                className={`note__grip note__grip--${axis}`}
+                onPointerDown={beginResize(axis)}
+                onPointerMove={onResizeMove}
+                onPointerUp={endResize}
+                onPointerCancel={endResize}
+              />
+            ))}
         </>
       )}
     </div>

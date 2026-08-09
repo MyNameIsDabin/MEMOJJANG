@@ -4,6 +4,7 @@ import { FONT_OPTIONS, SCALE_OPTIONS, useSettings, type Settings } from '../stor
 import { THEME_OPTIONS } from '../theme/palette'
 import { ThemeEditor } from './ThemeEditor'
 import { MemoRules } from './MemoRules'
+import { UpdateSection } from './UpdateSection'
 import { useCanvases } from '../store/canvasStore'
 import { storage } from '../platform/storage'
 import { isTauri } from '../platform/env'
@@ -41,6 +42,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="settings__body">
+          <UpdateSection />
+
           <Section title="글꼴">
             <p className="settings__note">
               기본은 고전 픽셀 글꼴 <b>갈무리11</b>입니다. 픽셀 글꼴은 정수 배율에서 가장 또렷합니다.
@@ -196,6 +199,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                   ['Ctrl+V', '커서 자리에 붙여넣기 (그림은 그림 노트로)'],
                   ['Ctrl+F', '보드 안에서 찾기 (다시 누르면 닫힘)'],
                   ['F2', '고른 노트의 이름 바꾸기'],
+                  ['Esc', '화면 가득 펼친 노트 접기 · 열린 패널 닫기'],
                   ['휠', '위아래로 밀기 (스크롤 되는 노트 위에서는 그 안을)'],
                   ['Shift+휠', '좌우로 밀기'],
                   ['Ctrl+휠', '커서 기준 확대·축소'],

@@ -65,6 +65,64 @@
   margin-top: 9px;
 }
 
+/* ── 판올림 ────────────────────────────────────────────────────────── */
+
+/* 평소에는 다른 칸과 똑같이 조용히 있다가, 새 판이 있을 때만 눈에 들어온다. */
+.update--new {
+  padding: 8px 10px;
+  background: var(--face-2);
+  border: 2px solid var(--sel);
+}
+
+.update__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.update__now {
+  color: var(--text-dim);
+}
+
+.update__now b {
+  color: var(--text);
+}
+
+.update__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 릴리스 노트는 남이 쓴 글이라 길이를 알 수 없다. 접어 두지 말고 자리를 정해 준다. */
+.update__notes {
+  margin: 7px 0 0;
+  padding: 6px 8px;
+  max-height: 120px;
+  overflow-y: auto;
+  background: var(--face);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.update__bar {
+  margin-top: 7px;
+  height: 10px;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+}
+
+.update__fill {
+  height: 100%;
+  background: var(--sel);
+}
+
 .settings__actions {
   display: flex;
   flex-wrap: wrap;

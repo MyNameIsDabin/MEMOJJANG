@@ -69,3 +69,120 @@
   min-width: 46px;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── 노트 목록 ─────────────────────────────────────────────────────── */
+
+/* 상태 줄에서 위로 펼쳐진다. 상태 줄이 자기 높이를 알고 있으므로 bottom: 100% 로 붙인다. */
+.notelist {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 210;
+  width: min(340px, calc(100vw - 8px));
+  max-height: min(60vh, 420px);
+  margin-bottom: 2px;
+  display: flex;
+  /* 검색칸을 아래에 두려면 목록이 위로 쌓여야 한다. */
+  flex-direction: column;
+  background: var(--face);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.notelist__items {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* 목록이 짧아도 검색칸이 위로 붕 뜨지 않도록 바닥에 붙여 쌓는다. */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.notelist__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'kind title' 'kind sub';
+  align-items: center;
+  gap: 0 6px;
+  width: 100%;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.notelist__item:hover {
+  background: var(--chrome-hover);
+}
+
+.notelist__item--on {
+  background: var(--sel);
+  color: var(--accent-ink);
+}
+
+.notelist__kind {
+  grid-area: kind;
+  padding: 1px 4px;
+  background: var(--face-2);
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+}
+
+.notelist__title {
+  grid-area: title;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.notelist__sub {
+  grid-area: sub;
+  color: var(--text-dim);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.notelist__item--on .notelist__sub,
+.notelist__item--on .notelist__kind {
+  color: inherit;
+}
+
+.notelist__empty {
+  margin: 0;
+  padding: 10px 8px;
+  color: var(--text-dim);
+}
+
+/* 목록이 아무리 길어져도 검색칸은 늘 여기 그대로 있다. */
+.notelist__find {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border-top: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.notelist__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 4px;
+  background: var(--face-2);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  border-radius: 0;
+  outline: none;
+  font: inherit;
+}
+
+.notelist__count {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}

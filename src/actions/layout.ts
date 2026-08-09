@@ -1,6 +1,7 @@
 /** 화면과 노트를 정리하는 동작들 — 어디를 보여줄지, 노트를 어떻게 늘어놓을지. */
 import { MAX_ZOOM, MIN_ZOOM } from '../types'
 import { clamp, useBoard } from '../store/boardStore'
+import { useUi } from '../store/uiStore'
 import { GRID_SIZE } from '../store/settingsStore'
 import { notify } from '../ui/toast'
 
@@ -32,7 +33,11 @@ function boundsOf(ids: string[]): Bounds | null {
   return bounds
 }
 
-/** 노트 하나를 화면 한가운데로 데려온다. 확대율은 건드리지 않는다. */
+/** 노트 하나를 화면 한가운데로 데려온다. 확대율은 건드리지 않는다.
+ *
+ *  노트를 화면 가득 펼쳐 놓은 상태였다면 그 자리에 이 노트를 대신 올린다.
+ *  찾다가 고른 노트가 캔버스 뒤편에서만 조용히 가운데로 오면, 펼쳐 둔 화면만
+ *  들여다보는 사람에게는 아무 일도 안 일어난 것처럼 보인다. */
 export function focusNote(id: string): void {
   const { notes, setViewport, select, raise } = useBoard.getState()
   const note = notes[id]
@@ -47,6 +52,7 @@ export function focusNote(id: string): void {
   }))
   raise(id)
   select([id])
+  useUi.getState().followFullscreen(id)
 }
 
 /** 주어진 노트들이 모두 보이도록 확대율과 위치를 맞춘다. 비우면 전체. */

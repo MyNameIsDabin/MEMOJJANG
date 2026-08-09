@@ -2,8 +2,10 @@
 import { MAX_ZOOM, MIN_ZOOM, useBoard } from '../store/boardStore'
 import { useCanvases } from '../store/canvasStore'
 import { useSettings } from '../store/settingsStore'
+import { useUi } from '../store/uiStore'
 import { setAlwaysOnTop } from '../platform/window'
 import { Icon } from './Icon'
+import { NoteListMenu } from './NoteListMenu'
 import './footer.css'
 
 export function Footer() {
@@ -11,6 +13,7 @@ export function Footer() {
   const count = useBoard((s) => s.noteIds.length)
   const alwaysOnTop = useSettings((s) => s.alwaysOnTop)
   const canvasName = useCanvases((s) => s.canvases.find((c) => c.id === s.activeId)?.name ?? null)
+  const listOpen = useUi((s) => s.noteList)
 
   const zoomBy = (factor: number) =>
     useBoard.getState().zoomAt(window.innerWidth / 2, window.innerHeight / 2, factor)
@@ -23,6 +26,16 @@ export function Footer() {
 
   return (
     <div className="footer">
+      <button
+        className="footer__btn"
+        aria-pressed={listOpen}
+        onClick={() => useUi.getState().toggleNoteList()}
+        title="노트 목록에서 찾아가기"
+      >
+        <Icon name="search" />
+      </button>
+      {listOpen && <NoteListMenu onClose={useUi.getState().closeNoteList} />}
+
       <span className="footer__info">
         {canvasName && <span className="footer__name">{canvasName}</span>}
         <span>노트 {count}장</span>

@@ -5,6 +5,7 @@ import { TitleBar } from './ui/TitleBar'
 import { Footer } from './ui/Footer'
 import { SettingsPanel } from './ui/SettingsPanel'
 import { SearchPanel } from './ui/SearchPanel'
+import { NoteStage } from './ui/NoteStage'
 import { Toasts } from './ui/Toasts'
 import { useBoard } from './store/boardStore'
 import { useCanvases } from './store/canvasStore'
@@ -13,6 +14,7 @@ import { loadSettings } from './store/settingsStore'
 import { startBoardAutosave, startSettingsEffects } from './store/effects'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useClipboardWatch } from './hooks/useClipboardWatch'
+import { useChromeMetrics } from './hooks/useChromeMetrics'
 import './App.css'
 
 export default function App() {
@@ -22,6 +24,7 @@ export default function App() {
   const hasCanvas = useCanvases((s) => s.activeId !== null)
   const searchOpen = useUi((s) => s.search)
   const settingsOpen = useUi((s) => s.settings)
+  const fullscreenNoteId = useUi((s) => s.fullscreenNoteId)
 
   useEffect(() => {
     // 구독을 먼저 걸어야 아래의 hydrate 가 설정 반영을 놓치지 않는다.
@@ -41,10 +44,13 @@ export default function App() {
 
   useShortcuts()
   useClipboardWatch()
+  useChromeMetrics()
 
   return (
     <>
       <Board />
+
+      {fullscreenNoteId && <NoteStage id={fullscreenNoteId} />}
 
       <div className="chrome">
         <TitleBar />
@@ -52,7 +58,7 @@ export default function App() {
       <Footer />
 
       {canvasesReady && !hasCanvas && <StartPanel />}
-      {hasCanvas && boardReady && isEmpty && <EmptyHint />}
+      {hasCanvas && boardReady && isEmpty && !fullscreenNoteId && <EmptyHint />}
       {searchOpen && <SearchPanel onClose={useUi.getState().closeSearch} />}
       {settingsOpen && <SettingsPanel onClose={useUi.getState().closeSettings} />}
       <Toasts />

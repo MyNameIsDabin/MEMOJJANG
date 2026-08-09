@@ -4,6 +4,9 @@
 #
 # 올라간 릴리스는 초안(draft)으로 남으므로, 내용을 확인하고 직접 Publish 를 눌러야
 # 사람들에게 보입니다. 자동으로 공개하고 싶으면 아래 releaseDraft 를 false 로.
+#
+# 앱 안의 판올림은 릴리스를 Publish 한 뒤에야 동작합니다 — 초안에 붙은 latest.json 은
+# releases/latest/download 로 잡히지 않기 때문입니다.
 
 name: release
 
@@ -43,6 +46,9 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 판올림 파일에 서명한다. 이 열쇠가 없으면 앱이 받은 것을 믿지 못해 설치하지 않는다.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           # 버전은 src-tauri/tauri.conf.json 의 것이 __VERSION__ 자리에 들어간다.
           tagName: v__VERSION__
@@ -59,4 +65,6 @@ jobs:
             **추가 정보 → 실행**을 누르면 됩니다.
           releaseDraft: true
           prerelease: false
+          # 앱이 "지금 최신이 무엇인가" 를 물어보는 latest.json 을 함께 올린다.
+          includeUpdaterJson: true
           args: --target x86_64-pc-windows-msvc
