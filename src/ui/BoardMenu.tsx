@@ -8,6 +8,7 @@ import { copyNotes } from '../actions/clip'
 import { beginCapture } from '../platform/capture'
 import { isTauri } from '../platform/env'
 import { describeError, notify } from './toast'
+import { t, useT } from '../i18n'
 import './menu.css'
 
 /** 화면을 얼려 놓고 캡처 화면으로 넘어간다. 창을 넓히는 일은 Rust 가 맡는다. */
@@ -17,7 +18,7 @@ async function startCapture(world: { x: number; y: number }): Promise<void> {
     useUi.getState().startCapture(shot, world)
   } catch (err) {
     console.error('[capture] 시작 실패', err)
-    notify(`화면을 캡처하지 못했습니다 — ${describeError(err)}`, 'error')
+    notify(t('toast.captureFailed', { reason: describeError(err) }), 'error')
   }
 }
 
@@ -29,6 +30,7 @@ export interface MenuAnchor {
 export function BoardMenu({ anchor, onClose }: { anchor: MenuAnchor; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ left: anchor.screenX, top: anchor.screenY })
+  const say = useT()
   const selection = useBoard((s) => s.selection)
 
   // 화면 밖으로 삐져나가면 안쪽으로 당긴다.
@@ -68,27 +70,27 @@ export function BoardMenu({ anchor, onClose }: { anchor: MenuAnchor; onClose: ()
   return (
     <div ref={ref} className="menu bevel-out" style={pos} onContextMenu={(e) => e.preventDefault()}>
       <button className="menu__item" onClick={run(() => useBoard.getState().addNote('todo', world()))}>
-        <span className="menu__key">할 일 추가</span>
+        <span className="menu__key">{say('menu.addTodo')}</span>
         <span className="menu__hint">Ctrl+1</span>
       </button>
       <button className="menu__item" onClick={run(() => useBoard.getState().addNote('memo', world()))}>
-        <span className="menu__key">메모 추가</span>
+        <span className="menu__key">{say('menu.addMemo')}</span>
         <span className="menu__hint">Ctrl+2</span>
       </button>
       <button className="menu__item" onClick={run(() => useBoard.getState().addNote('link', world()))}>
-        <span className="menu__key">바로가기 추가</span>
+        <span className="menu__key">{say('menu.addLink')}</span>
         <span className="menu__hint">Ctrl+3</span>
       </button>
       <button className="menu__item" onClick={run(() => void addImageFromFile(world()))}>
-        <span className="menu__key">그림 불러오기…</span>
+        <span className="menu__key">{say('menu.image')}</span>
       </button>
       <button
         className="menu__item"
         disabled={!isTauri()}
         onClick={run(() => void startCapture(world()))}
-        title="바탕화면의 원하는 자리를 끌어서 담습니다"
+        title={say('menu.captureHint')}
       >
-        <span className="menu__key">캡처해서 가져오기</span>
+        <span className="menu__key">{say('menu.capture')}</span>
       </button>
 
       <div className="menu__sep" />
@@ -97,13 +99,13 @@ export function BoardMenu({ anchor, onClose }: { anchor: MenuAnchor; onClose: ()
         className="menu__item"
         disabled={!selection.length}
         onClick={run(() => void copyNotes(useBoard.getState().selection))}
-        title="고른 메모지를 통째로 복사합니다"
+        title={say('menu.copyNotesHint')}
       >
-        <span className="menu__key">메모지 복사하기</span>
+        <span className="menu__key">{say('menu.copyNotes')}</span>
         <span className="menu__hint">Ctrl+C</span>
       </button>
       <button className="menu__item" onClick={run(() => void pasteFromClipboard(world()))}>
-        <span className="menu__key">여기에 붙여넣기</span>
+        <span className="menu__key">{say('menu.paste')}</span>
         <span className="menu__hint">Ctrl+V</span>
       </button>
       <button
@@ -113,7 +115,7 @@ export function BoardMenu({ anchor, onClose }: { anchor: MenuAnchor; onClose: ()
           select(noteIds)
         })}
       >
-        <span className="menu__key">전체 선택</span>
+        <span className="menu__key">{say('menu.selectAll')}</span>
         <span className="menu__hint">Ctrl+A</span>
       </button>
 
@@ -123,19 +125,19 @@ export function BoardMenu({ anchor, onClose }: { anchor: MenuAnchor; onClose: ()
         className="menu__item"
         onClick={run(() => useBoard.getState().setViewport((vp) => ({ ...vp, zoom: 1 })))}
       >
-        <span className="menu__key">확대 100%</span>
+        <span className="menu__key">{say('menu.zoom100')}</span>
         <span className="menu__hint">Ctrl+0</span>
       </button>
       <button className="menu__item" onClick={run(() => zoomToFit())}>
-        <span className="menu__key">전체 보기로 맞추기</span>
+        <span className="menu__key">{say('menu.fit')}</span>
         <span className="menu__hint">Ctrl+Shift+0</span>
       </button>
       <button className="menu__item" onClick={run(() => arrangeGrid(useBoard.getState().selection))}>
-        <span className="menu__key">격자에 맞춰 정리</span>
+        <span className="menu__key">{say('menu.arrange')}</span>
         <span className="menu__hint">Ctrl+Shift+G</span>
       </button>
       <button className="menu__item" onClick={run(useUi.getState().openSearch)}>
-        <span className="menu__key">보드에서 찾기</span>
+        <span className="menu__key">{say('menu.find')}</span>
         <span className="menu__hint">Ctrl+F</span>
       </button>
     </div>

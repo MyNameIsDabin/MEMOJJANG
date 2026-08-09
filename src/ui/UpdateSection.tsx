@@ -10,6 +10,7 @@ import { checkForUpdate, currentVersion, installUpdate, type UpdateInfo } from '
 import { isTauri } from '../platform/env'
 import { notify } from './toast'
 import { Icon } from './Icon'
+import { t, useT } from '../i18n'
 
 type Phase =
   | { at: 'checking' }
@@ -20,6 +21,7 @@ type Phase =
 
 export function UpdateSection() {
   const [version, setVersion] = useState('')
+  const say = useT()
   const [phase, setPhase] = useState<Phase>({ at: 'checking' })
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export function UpdateSection() {
   // 설정을 열 때 한 번. 사용자가 따로 누르지 않아도 알게 하려는 것이므로 조용히 돈다.
   useEffect(() => {
     if (!isTauri()) {
-      setPhase({ at: 'failed', why: '브라우저에서는 새 버전을 확인할 수 없습니다.' })
+      setPhase({ at: 'failed', why: t('update.browser') })
       return
     }
     void check()
@@ -59,7 +61,7 @@ export function UpdateSection() {
     } catch (err) {
       const why = err instanceof Error ? err.message : String(err)
       setPhase({ at: 'found', info })
-      notify(`새 버전을 설치하지 못했습니다: ${why}`)
+      notify(t('update.failed', { reason: why }))
     }
   }
 
@@ -67,35 +69,38 @@ export function UpdateSection() {
 
   return (
     <section className={`settings__section update${isNew ? ' update--new' : ''}`}>
-      <h2 className="settings__title">새로운 버전</h2>
+      <h2 className="settings__title">{say('update.title')}</h2>
 
       <div className="update__row">
         <span className="update__now">
-          지금 버전 <b>{version || '…'}</b>
+          {say('update.current')} <b>{version || '…'}</b>
         </span>
 
         {phase.at === 'found' && (
           <button className="btn update__go" onClick={() => void install(phase.info)}>
-            <Icon name="download" /> {phase.info.version} 설치하기
+            <Icon name="download" /> {say('update.install', { version: phase.info.version })}
           </button>
         )}
 
         {(phase.at === 'latest' || phase.at === 'failed') && (
           <button className="btn" onClick={() => void check()}>
-            다시 확인
+            {say('update.recheck')}
           </button>
         )}
       </div>
 
-      {phase.at === 'checking' && <p className="settings__note">새 판이 있는지 보는 중…</p>}
-      {phase.at === 'latest' && <p className="settings__note">가장 새 판을 쓰고 있습니다.</p>}
+      {phase.at === 'checking' && <p className="settings__note">{say('update.checking')}</p>}
+      {phase.at === 'latest' && <p className="settings__note">{say('update.latest')}</p>}
       {phase.at === 'failed' && <p className="settings__note">{phase.why}</p>}
 
       {phase.at === 'found' && (
         <>
           <p className="settings__note">
-            <b>{phase.info.version}</b> 이 나왔습니다
-            {phase.info.date ? ` (${phase.info.date.slice(0, 10)})` : ''}. 누르면 받아서 깔고 앱을 다시 띄웁니다.
+            {say('update.found', {
+              version: phase.info.date
+                ? `${phase.info.version} (${phase.info.date.slice(0, 10)})`
+                : phase.info.version,
+            })}
           </p>
           {phase.info.notes && <pre className="update__notes">{phase.info.notes}</pre>}
         </>
@@ -104,7 +109,7 @@ export function UpdateSection() {
       {phase.at === 'downloading' && (
         <>
           <p className="settings__note">
-            {phase.percent === null ? '받는 중…' : `받는 중… ${phase.percent}%`}
+            {phase.percent === null ? say('update.downloading') : say('update.downloadingPercent', { percent: phase.percent })}
           </p>
           <div className="update__bar">
             <div

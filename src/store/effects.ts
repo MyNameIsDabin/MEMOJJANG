@@ -6,6 +6,7 @@ import { applySettings, pickSettings, useSettings, type Settings } from './setti
 import { storage } from '../platform/storage'
 import { setAlwaysOnTop, setClipboardWatch, setCloseToTray, setGlobalHotkey } from '../platform/window'
 import { describeError, notify } from '../ui/toast'
+import { t } from '../i18n'
 
 const SAVE_DELAY = 600
 
@@ -23,7 +24,7 @@ export function startBoardAutosave(): () => void {
     void saveActiveCanvas().catch((err) => {
       console.error('[autosave] 저장 실패', err)
       // 저장이 안 되고 있다는 사실은 반드시 알아야 한다. 모르고 계속 쓰면 다 날아간다.
-      notify(`캔버스를 저장하지 못했습니다 — ${describeError(err)}`, 'error')
+      notify(t('canvas.saveFailed', { reason: describeError(err) }), 'error')
     })
   }
 
@@ -71,7 +72,7 @@ export function startSettingsEffects(): () => void {
     if (first || next.globalHotkey !== prev?.globalHotkey) {
       setGlobalHotkey(next.globalHotkey).catch((err) => {
         console.error('[hotkey] 등록 실패', err)
-        notify(`전역 단축키를 걸지 못했습니다 — ${describeError(err)}`, 'error')
+        notify(t('canvas.hotkeyFailed', { reason: describeError(err) }), 'error')
       })
     }
   }

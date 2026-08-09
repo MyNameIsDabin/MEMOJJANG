@@ -17,6 +17,7 @@ import { emptyCanvas, readCanvas, releaseCanvasImages, writeCanvas } from '../pl
 import { baseName, dirName, files, joinPath, stemOf } from '../platform/files'
 import { isTauri } from '../platform/env'
 import { describeError, notify } from '../ui/toast'
+import { t } from '../i18n'
 
 interface CanvasState {
   canvases: CanvasRef[]
@@ -75,8 +76,8 @@ async function migrateLegacyBoard(): Promise<CanvasRef | null> {
       await files.rename(oldImages, newImages).catch(() => {})
     }
 
-    const ref: CanvasRef = { id: newId(), path: legacy, name: '내 보드' }
-    notify('예전에 쓰던 보드를 "내 보드" 탭으로 옮겼습니다.')
+    const ref: CanvasRef = { id: newId(), path: legacy, name: t('canvas.myBoard') }
+    notify(t('canvas.moved'))
     return ref
   } catch (err) {
     console.error('[canvas] 예전 보드 이전 실패', err)
@@ -86,34 +87,34 @@ async function migrateLegacyBoard(): Promise<CanvasRef | null> {
 
 /** 새 캔버스를 만들 때 대화상자에 미리 채워 넣을 경로. */
 async function suggestedPath(): Promise<string> {
-  const fallback = `새 보드.${CANVAS_EXT}`
+  const fallback = `${t('canvas.newBoard')}.${CANVAS_EXT}`
   if (!isTauri()) return fallback
   try {
     const { documentDir } = await import('@tauri-apps/api/path')
-    return joinPath(joinPath(await documentDir(), '메모짱'), fallback)
+    return joinPath(joinPath(await documentDir(), t('canvas.folderName')), fallback)
   } catch {
     return fallback
   }
 }
 
-const FILTERS = [{ name: '메모짱 캔버스', extensions: ['json'] }]
+const filters = () => [{ name: t('canvas.filter'), extensions: ['json'] }]
 
 async function askSavePath(): Promise<string | null> {
   if (!isTauri()) {
-    const typed = window.prompt('캔버스 파일 이름 (브라우저 모드에서는 흉내만 냅니다)', `새 보드.${CANVAS_EXT}`)
+    const typed = window.prompt(t('canvas.promptSave'), `${t('canvas.newBoard')}.${CANVAS_EXT}`)
     return typed?.trim() || null
   }
   const { save } = await import('@tauri-apps/plugin-dialog')
-  return save({ title: '캔버스를 저장할 파일', defaultPath: await suggestedPath(), filters: FILTERS })
+  return save({ title: t('canvas.saveTitle'), defaultPath: await suggestedPath(), filters: filters() })
 }
 
 async function askOpenPath(): Promise<string | null> {
   if (!isTauri()) {
-    const typed = window.prompt('열 캔버스 파일 이름')
+    const typed = window.prompt(t('canvas.promptOpen'))
     return typed?.trim() || null
   }
   const { open } = await import('@tauri-apps/plugin-dialog')
-  const picked = await open({ title: '캔버스 열기', multiple: false, directory: false, filters: FILTERS })
+  const picked = await open({ title: t('canvas.openTitle'), multiple: false, directory: false, filters: filters() })
   return typeof picked === 'string' ? picked : null
 }
 
@@ -129,7 +130,7 @@ export const useCanvases = create<CanvasState>()((set, get) => {
     try {
       const doc = await readCanvas(ref.path)
       if (!doc) {
-        notify(`파일을 찾을 수 없습니다 — ${ref.path}`, 'error')
+        notify(t('canvas.notFound', { path: ref.path }), 'error')
         // 내용은 비워 두되 탭은 남긴다. 사용자가 파일을 되돌려 놓을 수도 있다.
         useBoard.getState().hydrate(null)
         return false
@@ -141,7 +142,7 @@ export const useCanvases = create<CanvasState>()((set, get) => {
       }
       return true
     } catch (err) {
-      notify(`캔버스를 열지 못했습니다 — ${describeError(err)}`, 'error')
+      notify(t('canvas.openFailed', { reason: describeError(err) }), 'error')
       useBoard.getState().hydrate(null)
       return false
     }
@@ -194,10 +195,10 @@ export const useCanvases = create<CanvasState>()((set, get) => {
       set({ busy: true })
       try {
         if (get().canvases.some((c) => c.path === path)) {
-          notify('이미 열려 있는 캔버스입니다.')
+          notify(t('canvas.already'))
           return
         }
-        const name = stemOf(path) || '새 보드'
+        const name = stemOf(path) || t('canvas.newBoard')
         await writeCanvas(path, emptyCanvas(name))
 
         await saveActiveCanvas()
@@ -206,7 +207,7 @@ export const useCanvases = create<CanvasState>()((set, get) => {
         await loadInto(ref)
         await persistWorkspace()
       } catch (err) {
-        notify(`캔버스를 만들지 못했습니다 — ${describeError(err)}`, 'error')
+        notify(t('canvas.createFailed', { reason: describeError(err) }), 'error')
       } finally {
         set({ busy: false })
       }
@@ -231,7 +232,7 @@ export const useCanvases = create<CanvasState>()((set, get) => {
         await loadInto(ref)
         await persistWorkspace()
       } catch (err) {
-        notify(`캔버스를 열지 못했습니다 — ${describeError(err)}`, 'error')
+        notify(t('canvas.openFailed', { reason: describeError(err) }), 'error')
       } finally {
         set({ busy: false })
       }

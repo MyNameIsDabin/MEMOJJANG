@@ -6,8 +6,10 @@ import { useBoard } from '../store/boardStore'
 import { Icon } from '../ui/Icon'
 import { describeDue, nextTickDelay } from './due'
 import { DuePopup } from './DuePopup'
+import { useT } from '../i18n'
 
 export function TodoBody({ note }: { note: TodoNote }) {
+  const say = useT()
   const inputs = useRef(new Map<string, HTMLTextAreaElement>())
   const rows = useRef(new Map<string, HTMLElement>())
   /** 방금 만든 항목으로 커서를 옮기기 위한 예약. 렌더 뒤에 처리된다. */
@@ -139,7 +141,7 @@ export function TodoBody({ note }: { note: TodoNote }) {
               <button
                 type="button"
                 className="todo__grip"
-                title="끌어서 순서 바꾸기"
+                title={say('todo.reorder')}
                 onPointerDown={beginReorder(index)}
                 onPointerMove={onReorderMove}
                 onPointerUp={endReorder}
@@ -151,7 +153,7 @@ export function TodoBody({ note }: { note: TodoNote }) {
               <button
                 type="button"
                 className="todo__check"
-                title={item.done ? '되돌리기' : '완료'}
+                title={say(item.done ? 'todo.undone' : 'todo.done')}
                 onClick={() => patchItem(item.id, { done: !item.done })}
               >
                 {item.done ? '✔' : ''}
@@ -161,7 +163,7 @@ export function TodoBody({ note }: { note: TodoNote }) {
                 className="todo__text"
                 rows={1}
                 value={item.text}
-                placeholder="할 일…"
+                placeholder={say('todo.placeholder')}
                 spellCheck={false}
                 ref={(el) => {
                   if (el) inputs.current.set(item.id, el)
@@ -190,7 +192,7 @@ export function TodoBody({ note }: { note: TodoNote }) {
               <button
                 type="button"
                 className={`todo__act${item.due ? ' todo__act--on' : ''}`}
-                title="마감 정하기"
+                title={say('todo.due')}
                 onClick={() => setDueFor(dueFor === item.id ? null : item.id)}
               >
                 <Icon name="clock" />
@@ -198,7 +200,7 @@ export function TodoBody({ note }: { note: TodoNote }) {
               <button
                 type="button"
                 className="todo__act todo__act--drop"
-                title="항목 삭제"
+                title={say('todo.remove')}
                 onClick={() => drop(item.id)}
               >
                 <Icon name="close" />
@@ -226,7 +228,7 @@ export function TodoBody({ note }: { note: TodoNote }) {
 
       <div className="todo__foot">
         <button type="button" className="todo__add" onClick={() => insertAfter(null)}>
-          + 항목
+          {say('todo.add')}
         </button>
         <span>
           {done}/{note.items.length}

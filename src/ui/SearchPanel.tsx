@@ -5,14 +5,21 @@ import { focusNote } from '../actions/layout'
 import { useBoard } from '../store/boardStore'
 import type { NoteKind } from '../types'
 import { Icon } from './Icon'
+import { useT, type MessageKey } from '../i18n'
 import './search.css'
 
-const KIND_LABEL: Record<NoteKind, string> = { todo: '할일', memo: '메모', image: '그림', link: '링크' }
+const KIND_LABEL: Record<NoteKind, MessageKey> = {
+  todo: 'kind.todo',
+  memo: 'kind.memo',
+  image: 'kind.image',
+  link: 'kind.link',
+}
 
 export function SearchPanel({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
+  const say = useT()
 
   // 노트가 바뀌면 결과도 따라 바뀌어야 한다. 패널은 잠깐 떠 있다 사라지므로
   // 통째로 구독해도 부담이 없다.
@@ -63,14 +70,14 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
           className="search__input"
           autoFocus
           value={query}
-          placeholder="노트 안에서 찾기…"
+          placeholder={say('search.placeholder')}
           spellCheck={false}
           onChange={(e) => setQuery(e.target.value)}
         />
         <span className="search__count">
-          {query.trim() ? (hits.length ? `${hits.length}개` : '없음') : ''}
+          {query.trim() ? (hits.length ? say('search.count', { n: hits.length }) : say('search.none')) : ''}
         </span>
-        <button type="button" className="search__close" title="닫기 (Esc)" onClick={onClose}>
+        <button type="button" className="search__close" title={say('search.close')} onClick={onClose}>
           <Icon name="close" />
         </button>
       </div>
@@ -85,15 +92,15 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
               className={`search__hit${i === active ? ' search__hit--on' : ''}`}
               onClick={() => go(i)}
             >
-              <span className="search__kind">{KIND_LABEL[hit.kind]}</span>
+              <span className="search__kind">{say(KIND_LABEL[hit.kind])}</span>
               <span className="search__title">{hit.title}</span>
-              <span className="search__snippet">{hit.snippet || '(내용 없음)'}</span>
+              <span className="search__snippet">{hit.snippet || say('search.noBody')}</span>
             </button>
           ))}
         </div>
       )}
 
-      {query.trim() && !hits.length && <p className="search__empty">찾는 말이 어느 노트에도 없습니다.</p>}
+      {query.trim() && !hits.length && <p className="search__empty">{say('search.empty')}</p>}
     </div>
   )
 }

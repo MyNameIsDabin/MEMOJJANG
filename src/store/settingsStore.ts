@@ -5,6 +5,7 @@ import { storage } from '../platform/storage'
 import { applyPalette, type Palette, type ThemeKey } from '../theme/palette'
 import type { UserRule } from '../notes/detect'
 import type { StickerAsset } from '../types'
+import type { Locale, MessageKey } from '../i18n'
 
 export type { ThemeKey }
 
@@ -14,8 +15,11 @@ export type FontKey = string
 export interface FontOption {
   key: FontKey
   label: string
-  /** 설정 패널에서 보여줄 한 줄 설명 */
-  note: string
+  /** 설정 패널에서 보여줄 한 줄 설명 — 내장 글꼴은 noteKey 로 대신한다 */
+  note?: string
+  /** 내장 글꼴의 이름·설명은 말마다 다르다. 열쇠로 들고 있다가 화면에서 옮긴다. */
+  labelKey?: MessageKey
+  noteKey?: MessageKey
   stack: string
   /** 이 폰트가 설계된 픽셀 크기. 정수 배수에서만 또렷하게 나오므로 배율은 여기에 곱한다. */
   basePx: number
@@ -38,21 +42,26 @@ export interface UserFont {
 
 /** 기본값은 갈무리11 — 이 앱의 얼굴이다. 나머지는 취향껏 바꾸라고 열어둔다. */
 export const BUILTIN_FONTS: FontOption[] = [
-  { key: 'galmuri11', label: '갈무리11', note: '기본값 · 고전 픽셀', stack: '"Galmuri11", monospace', basePx: 11, pixel: true },
-  { key: 'galmuri9', label: '갈무리9', note: '더 작고 촘촘하게', stack: '"Galmuri9", monospace', basePx: 10, pixel: true },
-  { key: 'galmuri14', label: '갈무리14', note: '큼직하고 시원하게', stack: '"Galmuri14", monospace', basePx: 14, pixel: true },
-  { key: 'galmuri-mono', label: '갈무리Mono11', note: '코드 붙여넣기 좋음', stack: '"GalmuriMono11", monospace', basePx: 11, pixel: true },
-  { key: 'system', label: '시스템 폰트', note: '픽셀 폰트가 눈에 피로할 때', stack: 'system-ui, "Malgun Gothic", sans-serif', basePx: 13, pixel: false },
+  { key: 'galmuri11', label: '갈무리11', noteKey: 'font.note.galmuri11', stack: '"Galmuri11", monospace', basePx: 11, pixel: true },
+  { key: 'galmuri9', label: '갈무리9', noteKey: 'font.note.galmuri9', stack: '"Galmuri9", monospace', basePx: 10, pixel: true },
+  { key: 'galmuri14', label: '갈무리14', noteKey: 'font.note.galmuri14', stack: '"Galmuri14", monospace', basePx: 14, pixel: true },
+  { key: 'galmuri-mono', label: '갈무리Mono11', noteKey: 'font.note.galmuriMono', stack: '"GalmuriMono11", monospace', basePx: 11, pixel: true },
+  { key: 'system', label: '', labelKey: 'font.systemLabel', noteKey: 'font.note.system', stack: 'system-ui, "Malgun Gothic", sans-serif', basePx: 13, pixel: false },
 ]
 
-/** 직접 더한 글꼴까지 합친 목록. 설정 화면과 applySettings 가 같은 것을 봐야 한다. */
-export function fontOptions(userFonts: UserFont[]): FontOption[] {
+/** 직접 더한 글꼴까지 합친 목록. 설정 화면과 applySettings 가 같은 것을 봐야 한다.
+ *  글로 보여 줄 이름·설명은 말에 따라 다르므로 옮기는 함수를 받아서 여기서 푼다. */
+export function fontOptions(userFonts: UserFont[], say: (key: MessageKey) => string): FontOption[] {
   return [
-    ...BUILTIN_FONTS,
+    ...BUILTIN_FONTS.map((f) => ({
+      ...f,
+      label: f.labelKey ? say(f.labelKey) : f.label,
+      note: f.noteKey ? say(f.noteKey) : f.note,
+    })),
     ...userFonts.map((f) => ({
       key: f.key,
       label: f.label,
-      note: f.file ? '불러온 글꼴' : '이 컴퓨터에 깔린 글꼴',
+      note: f.file ? say('font.fromFile') : say('font.installed'),
       // 이름에 공백이 있어도 되도록 따옴표로 감싼다. 뒤의 monospace 는 못 찾았을 때의 대비책.
       stack: `"${f.family}", monospace`,
       basePx: f.basePx,
@@ -75,6 +84,8 @@ export const SCALE_OPTIONS: { value: number; label: string }[] = [
 ]
 
 export interface Settings {
+  /** 화면 글자를 어느 말로 보여 줄지. 적어 둔 메모는 건드리지 않는다. */
+  locale: Locale
   font: FontKey
   /** 노트 글자 배율. 픽셀 폰트는 정수배에서 가장 또렷하다. */
   fontScale: number
@@ -117,6 +128,7 @@ export function formatAccelerator(accelerator: string): string {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  locale: 'ko',
   font: 'galmuri11',
   fontScale: 1,
   theme: 'night',
@@ -184,10 +196,11 @@ export function isThemeColorChanged(key: keyof Palette): boolean {
 }
 
 export function pickSettings(s: SettingsState): Settings {
-  const { font, fontScale, theme, showGrid, snapToGrid } = s
+  const { locale, font, fontScale, theme, showGrid, snapToGrid } = s
   const { alwaysOnTop, minimizeToTray, clipboardWatch, globalHotkey, themeColors } = s
   const { memoAutoDetect, memoDisabledBuiltins, memoUserRules, userFonts, stickerAssets } = s
   return {
+    locale,
     font,
     fontScale,
     theme,
@@ -209,13 +222,18 @@ export function pickSettings(s: SettingsState): Settings {
 /** 설정을 문서 루트에 반영한다. 색은 팔레트에서 인라인 변수로 얹힌다. */
 export function applySettings(s: Settings): void {
   const root = document.documentElement
-  const options = fontOptions(s.userFonts)
-  const font = options.find((f) => f.key === s.font) ?? BUILTIN_FONTS[0]
-  root.style.setProperty('--ui-font', font.stack)
+  // 여기서는 글자 모양만 쓰므로 이름을 옮길 필요가 없다.
+  const font =
+    BUILTIN_FONTS.find((f) => f.key === s.font) ??
+    s.userFonts.find((f) => f.key === s.font) ??
+    BUILTIN_FONTS[0]
+  root.style.setProperty('--ui-font', 'stack' in font ? font.stack : `\"${font.family}\", monospace`)
   // 소수점 크기는 글자를 흐리게 만든다. 배율이 정수가 아니어도 최종 크기는 정수로 떨군다.
   root.style.setProperty('--ui-size', `${Math.round(font.basePx * s.fontScale)}px`)
   root.style.setProperty('--ui-scale', String(s.fontScale))
   root.dataset.theme = s.theme
+  // 브라우저가 글자를 다룰 때(줄바꿈·글꼴 고르기) 쓰는 표시다.
+  root.lang = s.locale
   // 도트 글꼴일 때만 안티에일리어싱을 끈다.
   root.dataset.pixel = font.pixel ? 'on' : 'off'
   applyPalette(s.theme, s.themeColors[s.theme])

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useCanvases } from '../store/canvasStore'
 import { Icon } from './Icon'
+import { useT } from '../i18n'
 import './tabs.css'
 
 export function CanvasTabs() {
@@ -11,6 +12,7 @@ export function CanvasTabs() {
   const activeId = useCanvases((s) => s.activeId)
   const busy = useCanvases((s) => s.busy)
   const [renamingId, setRenamingId] = useState<string | null>(null)
+  const say = useT()
 
   return (
     <div className="tabs">
@@ -52,7 +54,7 @@ export function CanvasTabs() {
                   <button
                     type="button"
                     className="tab__act"
-                    title="이름 바꾸기"
+                    title={say('tabs.rename')}
                     onClick={() => setRenamingId(canvas.id)}
                   >
                     <Icon name="pencil" />
@@ -60,7 +62,7 @@ export function CanvasTabs() {
                   <button
                     type="button"
                     className="tab__act tab__act--close"
-                    title="탭 닫기 (파일은 지워지지 않습니다)"
+                    title={say('tabs.close')}
                     disabled={busy}
                     onClick={() => void useCanvases.getState().closeCanvas(canvas.id)}
                   >
@@ -77,7 +79,7 @@ export function CanvasTabs() {
         type="button"
         className="tabs__btn"
         disabled={busy}
-        title="새 캔버스 만들기 — 저장할 파일을 고릅니다"
+        title={say('tabs.new')}
         onClick={() => void useCanvases.getState().createCanvas()}
       >
         <Icon name="plus" />
@@ -86,7 +88,7 @@ export function CanvasTabs() {
         type="button"
         className="tabs__btn"
         disabled={busy}
-        title="기존 캔버스 파일 열기"
+        title={say('tabs.open')}
         onClick={() => void useCanvases.getState().openCanvas()}
       >
         <Icon name="folder" />

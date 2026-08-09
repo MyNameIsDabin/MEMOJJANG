@@ -1,5 +1,6 @@
 /** 메모짱 도메인 모델. 보드 파일(board.json)에 그대로 직렬화되는 형태이므로
  *  필드를 바꿀 때는 storage.ts 의 migrate() 도 함께 손봐야 한다. */
+import type { MessageKey } from './i18n'
 
 /** 예전에 있던 'clip'(클립보드) 은 없앴다. 글자만 담을 때는 메모와 다를 게 없었고,
  *  쓸모 있었던 쪽은 그림이었기 때문이다. 옛 파일은 읽을 때 알아서 옮겨진다. */
@@ -135,12 +136,12 @@ export type StickerMask = 'none' | 'circle' | 'star'
  *  오른쪽 아래에 매달아 두면 노트를 늘려도 늘 오른쪽 아래에 남는다. */
 export type StickerAnchor = 'nw' | 'ne' | 'sw' | 'se' | 'center'
 
-export const STICKER_ANCHORS: { value: StickerAnchor; label: string; hint: string }[] = [
-  { value: 'nw', label: '좌상', hint: '왼쪽 위 모서리를 따라갑니다' },
-  { value: 'ne', label: '우상', hint: '오른쪽 위 모서리를 따라갑니다' },
-  { value: 'sw', label: '좌하', hint: '왼쪽 아래 모서리를 따라갑니다' },
-  { value: 'se', label: '우하', hint: '오른쪽 아래 모서리를 따라갑니다' },
-  { value: 'center', label: '중앙', hint: '노트 한가운데를 따라갑니다' },
+export const STICKER_ANCHORS: { value: StickerAnchor; labelKey: MessageKey; hintKey: MessageKey }[] = [
+  { value: 'nw', labelKey: 'sticker.anchorNW', hintKey: 'sticker.anchorHintNW' },
+  { value: 'ne', labelKey: 'sticker.anchorNE', hintKey: 'sticker.anchorHintNE' },
+  { value: 'sw', labelKey: 'sticker.anchorSW', hintKey: 'sticker.anchorHintSW' },
+  { value: 'se', labelKey: 'sticker.anchorSE', hintKey: 'sticker.anchorHintSE' },
+  { value: 'center', labelKey: 'sticker.anchorCenter', hintKey: 'sticker.anchorHintCenter' },
 ]
 
 /** 캔버스 위에 붙여 놓은 스티커 한 장. */

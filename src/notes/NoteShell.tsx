@@ -12,13 +12,14 @@ import { ImageBody } from './ImageBody'
 import { LinkBody } from './LinkBody'
 import { NoteStickers } from '../canvas/StickerLayer'
 import { Icon } from '../ui/Icon'
+import { useT, type MessageKey } from '../i18n'
 import './note.css'
 
-const KIND_LABEL: Record<Note['kind'], string> = {
-  todo: '할 일',
-  memo: '메모',
-  image: '이미지',
-  link: '바로가기',
+const KIND_LABEL: Record<Note['kind'], MessageKey> = {
+  todo: 'note.todo',
+  memo: 'note.memo',
+  image: 'note.image',
+  link: 'note.link',
 }
 
 /** 드래그로 볼지 클릭으로 볼지 가르는 문턱(화면 픽셀). */
@@ -66,6 +67,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
   const note = useBoard((s) => s.notes[id])
   const selected = useBoard((s) => s.selection.includes(id))
   const snapToGrid = useSettings((s) => s.snapToGrid)
+  const say = useT()
   // 안쪽에 깔린 스티커가 있으면 본문 바탕을 옅게 해 비쳐 보이게 한다.
   const hasDeco = useBoard((s) =>
     s.stickerIds.some((sid) => {
@@ -331,7 +333,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
         onPointerCancel={expanded ? undefined : endDrag}
         onDoubleClick={expanded ? undefined : toggleCollapsed}
       >
-        <button type="button" className="note__swatch" title="색 바꾸기" onClick={cycleAccent} />
+        <button type="button" className="note__swatch" title={say('note.color')} onClick={cycleAccent} />
 
         {editingTitle ? (
           <input
@@ -341,7 +343,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
             onPointerDown={(e) => e.stopPropagation()}
             onFocus={(e) => e.currentTarget.select()}
             onBlur={(e) => {
-              useBoard.getState().patchNote(id, { title: e.currentTarget.value.trim() || KIND_LABEL[note.kind] })
+              useBoard.getState().patchNote(id, { title: e.currentTarget.value.trim() || say(KIND_LABEL[note.kind]) })
               useUi.getState().stopRenaming()
             }}
             onKeyDown={(e) => {
@@ -361,7 +363,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
           <button
             type="button"
             className="note__ctl"
-            title="이름 바꾸기 (F2)"
+            title={say('note.rename')}
             onClick={() => useUi.getState().startRenaming(id)}
           >
             <Icon name="pencil" />
@@ -370,7 +372,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
         <button
           type="button"
           className="note__ctl"
-          title={expanded ? '캔버스로 돌아가기 (Esc)' : '화면 가득 펼치기'}
+          title={say(expanded ? 'note.shrink' : 'note.expand')}
           aria-pressed={expanded}
           onClick={() =>
             expanded ? useUi.getState().collapseNote() : useUi.getState().expandNote(id)
@@ -383,7 +385,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
           <button
             type="button"
             className="note__ctl"
-            title={note.collapsed ? '펼치기' : '접기'}
+            title={say(note.collapsed ? 'note.uncollapse' : 'note.collapse')}
             onClick={toggleCollapsed}
           >
             <Icon name={note.collapsed ? 'winMaximize' : 'collapse'} />
@@ -393,7 +395,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
         <button
           type="button"
           className="note__ctl note__ctl--close"
-          title="삭제"
+          title={say('note.delete')}
           onClick={() => useBoard.getState().removeNotes([id])}
         >
           <Icon name="close" />

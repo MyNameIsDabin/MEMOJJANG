@@ -12,6 +12,7 @@ import { files, baseName } from './files'
 import { isTauri } from './env'
 import { base64ToBytes } from '../utils/bytes'
 import type { UserFont } from '../store/settingsStore'
+import { t } from '../i18n'
 
 const DIR = 'fonts'
 
@@ -53,21 +54,21 @@ export async function addFontFromFile(options: {
   basePx: number
   pixel: boolean
 }): Promise<UserFont | null> {
-  if (!isTauri()) throw new Error('앱에서만 글꼴 파일을 불러올 수 있습니다.')
+  if (!isTauri()) throw new Error(t('err.appOnlyFont'))
 
   const { open } = await import('@tauri-apps/plugin-dialog')
   const picked = await open({
     multiple: false,
-    filters: [{ name: '글꼴', extensions: ['ttf', 'otf', 'woff', 'woff2', 'ttc'] }],
+    filters: [{ name: t('dialog.fontFilter'), extensions: ['ttf', 'otf', 'woff', 'woff2', 'ttc'] }],
   })
   if (typeof picked !== 'string') return null
 
   const base64 = await files.readBinary(picked)
-  if (base64 === null) throw new Error('글꼴 파일을 읽지 못했습니다.')
+  if (base64 === null) throw new Error(t('err.fontRead'))
 
   const name = baseName(picked)
   const stem = safeFamily(name.replace(/\.[^.]+$/, ''))
-  if (!stem) throw new Error('글꼴 이름을 알아낼 수 없습니다.')
+  if (!stem) throw new Error(t('err.fontName'))
 
   const bytes = base64ToBytes(base64)
   // 먼저 글꼴로 읽히는지 확인한다. 안 되는 파일을 폴더에 남겨 둘 이유가 없다.
@@ -89,7 +90,7 @@ export async function addFontFromFile(options: {
 /** 이 컴퓨터에 이미 깔린 글꼴을 이름으로 더한다. */
 export function addFontByName(name: string, options: { basePx: number; pixel: boolean }): UserFont {
   const family = safeFamily(name)
-  if (!family) throw new Error('글꼴 이름을 적어 주세요.')
+  if (!family) throw new Error(t('err.fontFamily'))
   return {
     key: `user:${family}:${Date.now().toString(36)}`,
     label: family,

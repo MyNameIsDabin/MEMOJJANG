@@ -4,14 +4,16 @@
  *  붙여넣은 글이 무엇이든 글자로만 남는다. */
 import { useMemo } from 'react'
 import { prettyJson, tokenizeJson } from './jsonTokens'
+import { useT } from '../i18n'
 
 export function JsonView({ text }: { text: string }) {
+  const t = useT()
   const { body, broken } = useMemo(() => prettyJson(text), [text])
   const pieces = useMemo(() => tokenizeJson(body), [body])
 
   return (
     <div className="json">
-      {broken && <p className="json__broken">JSON 으로 읽히지 않아 들여쓰기는 그대로 둡니다.</p>}
+      {broken && <p className="json__broken">{t('json.broken')}</p>}
       <pre className="json__body">
         {pieces.map((piece, i) =>
           piece.kind === 'plain' ? (

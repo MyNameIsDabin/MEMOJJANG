@@ -9,8 +9,14 @@ import { useUi } from '../store/uiStore'
 import { focusNote } from '../actions/layout'
 import type { Note, NoteKind } from '../types'
 import { Icon } from './Icon'
+import { useT, type MessageKey } from '../i18n'
 
-const KIND_LABEL: Record<NoteKind, string> = { todo: '할일', memo: '메모', image: '그림', link: '링크' }
+const KIND_LABEL: Record<NoteKind, MessageKey> = {
+  todo: 'kind.todo',
+  memo: 'kind.memo',
+  image: 'kind.image',
+  link: 'kind.link',
+}
 
 /** 이름이 비었을 때 목록에서 알아볼 수 있도록 본문 앞머리를 조금 빌려 온다. */
 function subtitleOf(note: Note): string {
@@ -31,6 +37,7 @@ export function NoteListMenu({ onClose }: { onClose: () => void }) {
   const [active, setActive] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
   const itemsRef = useRef<HTMLDivElement>(null)
+  const say = useT()
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
@@ -102,11 +109,11 @@ export function NoteListMenu({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="notelist bevel-out" ref={ref} role="dialog" aria-label="노트 목록">
+    <div className="notelist bevel-out" ref={ref} role="dialog" aria-label={say('notelist.title')}>
       <div className="notelist__items" ref={itemsRef}>
         {rows.length === 0 && (
           <p className="notelist__empty">
-            {query.trim() ? '그런 이름의 노트가 없습니다.' : '아직 노트가 없습니다.'}
+            {say(query.trim() ? 'notelist.noMatch' : 'notelist.empty')}
           </p>
         )}
         {rows.map((note, i) => (
@@ -125,9 +132,9 @@ export function NoteListMenu({ onClose }: { onClose: () => void }) {
             onClick={() => go(note.id)}
             onMouseEnter={() => setActive(i)}
           >
-            <span className="notelist__kind">{KIND_LABEL[note.kind]}</span>
+            <span className="notelist__kind">{say(KIND_LABEL[note.kind])}</span>
             <span className="notelist__title">{note.title}</span>
-            <span className="notelist__sub">{subtitleOf(note) || '(비어 있음)'}</span>
+            <span className="notelist__sub">{subtitleOf(note) || say('notelist.blank')}</span>
           </button>
         ))}
       </div>
@@ -138,12 +145,12 @@ export function NoteListMenu({ onClose }: { onClose: () => void }) {
           className="notelist__input"
           autoFocus
           value={query}
-          placeholder="노트 이름으로 찾기…"
+          placeholder={say('notelist.placeholder')}
           spellCheck={false}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
         />
-        <span className="notelist__count">{rows.length}개</span>
+        <span className="notelist__count">{say('notelist.count', { n: rows.length })}</span>
       </div>
     </div>
   )

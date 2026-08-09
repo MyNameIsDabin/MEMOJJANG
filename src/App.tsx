@@ -9,6 +9,7 @@ import { NoteStage } from './ui/NoteStage'
 import { StickerBar } from './ui/StickerBar'
 import { CaptureOverlay } from './ui/CaptureOverlay'
 import { Toasts } from './ui/Toasts'
+import { useT } from './i18n'
 import { useBoard } from './store/boardStore'
 import { useCanvases } from './store/canvasStore'
 import { useUi } from './store/uiStore'
@@ -86,15 +87,14 @@ export default function App() {
  *  화면이 흑백으로 죽는 것만으로는 '왜' 그런지 알 수 없기 때문이다. */
 function DecorateHint() {
   const active = useUi((s) => s.activeStickerId)
+  const say = useT()
   return (
     <div className="decohint">
       <span>
-        {active
-          ? '귀퉁이를 끌어 돌리고 키웁니다 · 왼쪽 아래 고리를 노트로 끌면 붙습니다 · Enter 로 마침'
-          : '꾸미는 중 — 빈 곳을 우클릭해 스티커를 붙여 보세요'}
+        {say(active ? 'deco.active' : 'deco.idle')}
       </span>
       <button className="decohint__out" onClick={() => useUi.getState().stopDecorating()}>
-        나가기 (Esc)
+        {say('deco.exit')}
       </button>
     </div>
   )
@@ -102,20 +102,18 @@ function DecorateHint() {
 
 /** 열려 있는 캔버스가 하나도 없을 때. 첫 실행이 여기서 시작된다. */
 function StartPanel() {
+  const say = useT()
   return (
     <div className="start">
       <div className="start__card bevel-out">
-        <p className="start__head">캔버스를 하나 만들까요</p>
-        <p className="start__body">
-          메모짱은 캔버스 하나를 파일 하나로 저장합니다. 어디에 둘지 직접 고르면 되고,
-          여러 개를 만들어 위쪽 탭으로 오갈 수 있습니다.
-        </p>
+        <p className="start__head">{say('start.head')}</p>
+        <p className="start__body">{say('start.body')}</p>
         <div className="start__actions">
           <button className="btn" onClick={() => void useCanvases.getState().createCanvas()}>
-            새 캔버스 만들기…
+            {say('start.create')}
           </button>
           <button className="btn" onClick={() => void useCanvases.getState().openCanvas()}>
-            기존 캔버스 열기…
+            {say('start.open')}
           </button>
         </div>
       </div>
@@ -124,23 +122,18 @@ function StartPanel() {
 }
 
 function EmptyHint() {
+  const say = useT()
   return (
     <div className="hint">
       <div className="hint__card bevel-out">
-        <p className="hint__head">아직 아무것도 없네요</p>
+        <p className="hint__head">{say('hint.head')}</p>
         <ul className="hint__list">
-          <li>
-            빈 곳을 <b>오른쪽 클릭</b>하면 그 자리에 노트를 놓습니다
-          </li>
-          <li>
-            아무거나 복사한 뒤 <b>Ctrl+V</b> — 그림도 그대로 붙습니다
-          </li>
-          <li>
-            <b>휠</b>로 밀고, <b>Ctrl+휠</b>로 확대·축소
-          </li>
+          <li>{say('hint.rightClick')}</li>
+          <li>{say('hint.paste')}</li>
+          <li>{say('hint.wheel')}</li>
         </ul>
         <button className="btn hint__go" onClick={() => useBoard.getState().addNote('memo', dropPoint())}>
-          메모 하나 만들어 보기
+          {say('hint.go')}
         </button>
       </div>
     </div>

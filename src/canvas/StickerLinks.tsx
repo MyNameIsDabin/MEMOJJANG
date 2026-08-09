@@ -9,6 +9,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { anchorPointOf, useBoard, worldOf } from '../store/boardStore'
 import { layerOf, sizeOf } from './StickerLayer'
 import { useSettings } from '../store/settingsStore'
+import { useT } from '../i18n'
 import './sticker.css'
 
 /** 노트 뒤에 놓인 스티커의 자리를 알려 주는 실루엣.
@@ -61,6 +62,7 @@ export function StickerLinks() {
   const notes = useBoard((s) => s.notes)
   const zoom = useBoard((s) => s.viewport.zoom)
   const assets = useSettings((s) => s.stickerAssets)
+  const t = useT()
 
   const lines = stickerIds
     .map((id) => stickers[id])
@@ -71,7 +73,7 @@ export function StickerLinks() {
       // 선은 실제로 매달린 자리로 간다. 늘 한가운데로 그으면 어느 모서리를 기준으로
       // 잡아 뒀는지 선만 봐서는 알 수 없다 — 노트를 늘렸을 때 어디로 따라갈지도 함께 읽힌다.
       const to = anchorPointOf(note, sticker.anchor)
-      const name = assets.find((a) => a.id === sticker.assetId)?.name ?? '스티커'
+      const name = assets.find((a) => a.id === sticker.assetId)?.name ?? t('sticker.name')
       return { id: sticker.id, from, to, name }
     })
 
@@ -99,6 +101,7 @@ function Link({
   name: string
   zoom: number
 }) {
+  const t = useT()
   const left = Math.min(from.x, to.x)
   const top = Math.min(from.y, to.y)
   // 선이 수직·수평이면 폭이나 높이가 0 이 되어 아무것도 안 보인다. 최소 한 겹은 준다.
@@ -123,7 +126,7 @@ function Link({
         strokeWidth={Math.max(10, 14 / zoom)}
         onClick={() => useBoard.getState().detachSticker(id)}
       >
-        <title>{`${name} 연결 — 누르면 끊어집니다`}</title>
+        <title>{t('sticker.cut', { name })}</title>
       </line>
     </svg>
   )

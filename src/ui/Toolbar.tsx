@@ -10,6 +10,7 @@ import { useCanvases } from '../store/canvasStore'
 import { arrangeGrid, zoomToFit } from '../actions/layout'
 import { Icon, type IconName } from './Icon'
 import { useOverflow } from './useOverflow'
+import { useT } from '../i18n'
 import './chrome.css'
 
 interface Action {
@@ -36,6 +37,7 @@ export function Toolbar() {
   const font = useSettings((s) => `${s.font}/${s.fontScale}`)
   const hasCanvas = useCanvases((s) => s.activeId !== null)
   const decorating = useUi((s) => s.decorating)
+  const say = useT()
 
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -43,7 +45,7 @@ export function Toolbar() {
     {
       key: 'fit',
       icon: 'fit',
-      label: '전체 보기',
+      label: say('toolbar.fit'),
       hint: 'Ctrl+Shift+0',
       disabled: !count,
       run: () => zoomToFit(),
@@ -51,7 +53,7 @@ export function Toolbar() {
     {
       key: 'arrange',
       icon: 'grid',
-      label: '격자로 정리',
+      label: say('toolbar.arrange'),
       hint: 'Ctrl+Shift+G',
       disabled: count < 2,
       run: () => arrangeGrid(useBoard.getState().selection),
@@ -59,22 +61,22 @@ export function Toolbar() {
     {
       key: 'snap',
       icon: 'snap',
-      label: '격자에 붙이기',
+      label: say('toolbar.snap'),
       pressed: snapToGrid,
       run: () => useSettings.getState().set('snapToGrid', !snapToGrid),
     },
     {
       key: 'decorate',
       icon: 'sticker',
-      label: '꾸미기',
-      hint: '우클릭으로 스티커',
+      label: say('toolbar.decorate'),
+      hint: say('toolbar.decorateHint'),
       pressed: decorating,
       run: () => useUi.getState().toggleDecorating(),
     },
     {
       key: 'search',
       icon: 'search',
-      label: '보드에서 찾기',
+      label: say('toolbar.search'),
       hint: 'Ctrl+F',
       disabled: !count,
       run: useUi.getState().openSearch,
@@ -82,7 +84,7 @@ export function Toolbar() {
     {
       key: 'settings',
       icon: 'settings',
-      label: '설정',
+      label: say('toolbar.settings'),
       always: true,
       run: useUi.getState().openSettings,
     },
@@ -141,6 +143,7 @@ function OverflowMenu({
 }) {
   const ref = useRef<HTMLDivElement | null>(null)
   const buttonRef = useRef<HTMLButtonElement | null>(null)
+  const say = useT()
   // 메뉴는 도구 줄 밖(화면 기준)에 띄운다 — 도구 줄이 넘치는 아이콘을 잘라 내기 때문이다.
   // 그래서 자리는 버튼을 재서 직접 잡아 준다.
   const [spot, setSpot] = useState<{ top: number; left: number } | null>(null)
@@ -179,7 +182,7 @@ function OverflowMenu({
         ref={buttonRef}
         className="chip"
         aria-expanded={open}
-        title={`가려진 기능 ${actions.length}개`}
+        title={say('toolbar.more', { n: actions.length })}
         onClick={onToggle}
       >
         <Icon name="more" />

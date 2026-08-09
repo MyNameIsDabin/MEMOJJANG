@@ -4,6 +4,7 @@ import { clamp, useBoard } from '../store/boardStore'
 import { useUi } from '../store/uiStore'
 import { GRID_SIZE } from '../store/settingsStore'
 import { notify } from '../ui/toast'
+import { t } from '../i18n'
 
 /** 위쪽 제목·도구 줄과 아래쪽 상태 줄에 가리지 않도록 띄운다. */
 const PAD = { top: 84, right: 40, bottom: 60, left: 40 }
@@ -55,13 +56,35 @@ export function focusNote(id: string): void {
   useUi.getState().followFullscreen(id)
 }
 
+/** 골라 둔 노트를 화면 한가운데로. 여러 장이면 그 무리의 한가운데를 잡는다.
+ *
+ *  확대율은 건드리지 않는다 — 스페이스바로 "지금 보던 크기 그대로, 여기만 보자" 하는 동작이라
+ *  배율까지 움직이면 방금 맞춰 둔 눈금을 빼앗는 셈이 된다. */
+export function focusSelection(): void {
+  const { selection, setViewport } = useBoard.getState()
+  if (selection.length === 1) {
+    focusNote(selection[0])
+    return
+  }
+  const bounds = boundsOf(selection)
+  if (!bounds) return
+
+  const centerX = (bounds.left + bounds.right) / 2
+  const centerY = (bounds.top + bounds.bottom) / 2
+  setViewport((vp) => ({
+    ...vp,
+    x: window.innerWidth / 2 - centerX * vp.zoom,
+    y: window.innerHeight / 2 - centerY * vp.zoom,
+  }))
+}
+
 /** 주어진 노트들이 모두 보이도록 확대율과 위치를 맞춘다. 비우면 전체. */
 export function zoomToFit(ids?: string[]): void {
   const { noteIds, setViewport } = useBoard.getState()
   const targets = ids?.length ? ids : noteIds
   const bounds = boundsOf(targets)
   if (!bounds) {
-    notify('맞출 노트가 없습니다.')
+    notify(t('toast.needNotes'))
     return
   }
 
@@ -88,7 +111,7 @@ export function arrangeGrid(ids?: string[]): void {
   const { noteIds, notes, commit, patchNote } = useBoard.getState()
   const targets = (ids?.length ? ids : noteIds).filter((id) => notes[id])
   if (targets.length < 2) {
-    notify('정리할 노트가 2장 이상 필요합니다.')
+    notify(t('toast.needTwoNotes'))
     return
   }
 

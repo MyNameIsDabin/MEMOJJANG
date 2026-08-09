@@ -7,6 +7,7 @@
  *
  *  브라우저로 띄웠을 때는 이 기능이 통째로 없다. 그래서 부를 때마다 확인한다. */
 import { isTauri } from './env'
+import { t } from '../i18n'
 
 export interface UpdateInfo {
   version: string
@@ -29,7 +30,7 @@ async function loadUpdate() {
 }
 
 export async function currentVersion(): Promise<string> {
-  if (!isTauri()) return '개발 중'
+  if (!isTauri()) return t('update.dev')
   const { getVersion } = await import('@tauri-apps/api/app')
   return getVersion()
 }
@@ -40,14 +41,14 @@ export async function currentVersion(): Promise<string> {
 function friendly(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err)
   // 릴리스가 아직 없거나 초안이라 latest.json 이 잡히지 않을 때
-  if (/release JSON|404|not found/i.test(raw)) return '아직 올라온 새 버전이 없습니다.'
-  if (/network|dns|connect|timed? out|sending request/i.test(raw)) return '인터넷에 닿지 못했습니다.'
+  if (/release JSON|404|not found/i.test(raw)) return t('update.none')
+  if (/network|dns|connect|timed? out|sending request/i.test(raw)) return t('update.offline')
   return raw
 }
 
 /** 새 판이 있으면 그 정보를, 없으면 null 을 준다. 못 물어봤으면 예외를 던진다. */
 export async function checkForUpdate(): Promise<UpdateInfo | null> {
-  if (!isTauri()) throw new Error('앱에서만 확인할 수 있습니다.')
+  if (!isTauri()) throw new Error(t('err.appOnlyUpdate'))
 
   let update
   try {
@@ -67,7 +68,7 @@ export async function checkForUpdate(): Promise<UpdateInfo | null> {
 
 /** 받아서 깔고 앱을 다시 띄운다. 돌아오지 않는 함수다(성공하면 앱이 꺼진다). */
 export async function installUpdate(onProgress?: (p: Progress) => void): Promise<void> {
-  if (!pending) throw new Error('먼저 새 판을 확인해야 합니다.')
+  if (!pending) throw new Error(t('err.checkFirst'))
 
   let downloaded = 0
   let total = 0

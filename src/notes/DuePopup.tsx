@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { TodoItem } from '../types'
 import { DUE_PRESETS, fromDateTimeInput, suggestedDue, toDateTimeInput } from './due'
+import { useT } from '../i18n'
 
 export function DuePopup({
   item,
@@ -15,6 +16,7 @@ export function DuePopup({
   onClose: () => void
 }) {
   const ref = useRef<HTMLDivElement | null>(null)
+  const say = useT()
   const [value, setValue] = useState(() => toDateTimeInput(item.due ?? suggestedDue(Date.now())))
 
   useEffect(() => {
@@ -50,12 +52,12 @@ export function DuePopup({
         <div key={group.unit} className="duepop__quick">
           {group.items.map((preset) => (
             <button
-              key={preset.label}
+              key={preset.offset}
               type="button"
               className="btn duepop__chip"
               onClick={() => onApply(Date.now() + preset.offset)}
             >
-              {preset.label}
+              {say(preset.labelKey, { n: preset.n })}
             </button>
           ))}
         </div>
@@ -77,10 +79,10 @@ export function DuePopup({
 
       <div className="duepop__actions">
         <button type="button" className="btn" onClick={apply}>
-          정하기
+          {say('due.set')}
         </button>
         <button type="button" className="btn" onClick={onClear} disabled={!item.due}>
-          지우기
+          {say('due.clear')}
         </button>
       </div>
     </div>

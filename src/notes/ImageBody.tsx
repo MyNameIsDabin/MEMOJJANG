@@ -8,8 +8,10 @@ import { imageChromeHeight, useBoard } from '../store/boardStore'
 import { imageUrl } from '../platform/assets'
 import { copyImageFromUrl } from '../platform/clipboard'
 import { Icon } from '../ui/Icon'
+import { useT } from '../i18n'
 
 export function ImageBody({ note }: { note: ImageNote }) {
+  const say = useT()
   const [url, setUrl] = useState<string | null>(null)
   const [missing, setMissing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -127,9 +129,9 @@ export function ImageBody({ note }: { note: ImageNote }) {
       <div className="imagenote__frame">
         {missing ? (
           <div className="imagenote__missing">
-            그림 파일을 찾을 수 없습니다.
+            {say('image.missing')}
             <br />
-            캔버스 파일만 옮기고 <b>.assets</b> 폴더를 두고 오지 않았는지 확인해 보세요.
+            {say('image.missingHint')}
           </div>
         ) : url ? (
           <img src={url} alt={note.title} draggable={false} />
@@ -173,7 +175,7 @@ export function ImageBody({ note }: { note: ImageNote }) {
                 type="button"
                 className={`pen__color${c === color ? ' pen__color--on' : ''}`}
                 style={{ background: c }}
-                title="펜 색"
+                title={say('image.penColor')}
                 onClick={() => setColor(c)}
               />
             ))}
@@ -182,7 +184,7 @@ export function ImageBody({ note }: { note: ImageNote }) {
                 key={s}
                 type="button"
                 className={`pen__size${s === size ? ' pen__size--on' : ''}`}
-                title={`${['얇게', '보통', '굵게'][i]} 그리기`}
+                title={say((['image.penThin', 'image.penMedium', 'image.penThick'] as const)[i])}
                 onClick={() => setSize(s)}
               >
                 <span style={{ width: 3 + i * 3, height: 3 + i * 3 }} />
@@ -192,7 +194,7 @@ export function ImageBody({ note }: { note: ImageNote }) {
         )}
 
         <span className="imagenote__row">
-          <button type="button" className="imagenote__act" onClick={fitToImage} title="원본 비율로 맞추기">
+          <button type="button" className="imagenote__act" onClick={fitToImage} title={say('image.fit')}>
             {note.naturalW}×{note.naturalH}
           </button>
 
@@ -205,7 +207,7 @@ export function ImageBody({ note }: { note: ImageNote }) {
                 className="imagenote__act"
                 onClick={undo}
                 disabled={!strokes.length}
-                title="마지막 획 지우기"
+                title={say('image.undoStroke')}
               >
                 <Icon name="undo" />
               </button>
@@ -214,7 +216,7 @@ export function ImageBody({ note }: { note: ImageNote }) {
                 className="imagenote__act"
                 onClick={clear}
                 disabled={!strokes.length}
-                title="덧그린 것 모두 지우기"
+                title={say('image.clearStrokes')}
               >
                 <Icon name="trash" />
               </button>
@@ -225,13 +227,13 @@ export function ImageBody({ note }: { note: ImageNote }) {
             type="button"
             className="imagenote__act"
             aria-pressed={drawing}
-            title="연필로 덧그리기 — 원본 파일은 그대로 둡니다"
+            title={say('image.draw')}
             onClick={() => setDrawing((v) => !v)}
           >
             <Icon name="pencil" />
           </button>
           <button type="button" className="imagenote__act" onClick={onCopy} disabled={!url}>
-            {copied ? '복사됨!' : '복사'}
+            {say(copied ? 'image.copied' : 'image.copy')}
           </button>
         </span>
       </div>

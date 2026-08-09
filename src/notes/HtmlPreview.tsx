@@ -23,5 +23,5 @@ export function HtmlPreview({ html }: { html: string }) {
     [html],
   )
 
-  return <iframe className="memo__html" sandbox="" srcDoc={doc} title="HTML 미리보기" />
+  return <iframe className="memo__html" sandbox="" srcDoc={doc} title="HTML" />
 }

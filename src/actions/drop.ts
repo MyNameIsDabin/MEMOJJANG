@@ -10,6 +10,7 @@ import { isTauri } from '../platform/env'
 import { base64ToBlob } from '../utils/bytes'
 import { isTextField } from '../utils/dom'
 import { describeError, notify } from '../ui/toast'
+import { t } from '../i18n'
 
 /** 브라우저는 끌어온 그림을 여러 형식으로 함께 실어 보낸다. 쓸 만한 순서대로 뒤진다. */
 function pickUrl(data: DataTransfer): string | null {
@@ -49,7 +50,7 @@ function blobFromDataUrl(url: string): Blob | null {
 }
 
 async function downloadImage(url: string): Promise<Blob> {
-  if (!isTauri()) throw new Error('브라우저 모드에서는 웹에 있는 그림을 받아올 수 없습니다')
+  if (!isTauri()) throw new Error(t('err.browserImage'))
   const { invoke } = await import('@tauri-apps/api/core')
   const result = await invoke<{ mime: string; base64: string }>('download_image', { url })
   return base64ToBlob(result.base64, result.mime)
@@ -61,7 +62,7 @@ export async function handleDrop(data: DataTransfer, world: { x: number; y: numb
   const file = Array.from(data.files).find((f) => f.type.startsWith('image/'))
   if (file) {
     await addImageBlob(file, world).catch((err) => {
-      notify(`그림을 놓지 못했습니다 — ${describeError(err)}`, 'error')
+      notify(t('err.dropFailed', { reason: describeError(err) }), 'error')
     })
     return
   }
@@ -86,8 +87,8 @@ export async function handleDrop(data: DataTransfer, world: { x: number; y: numb
     } catch (err) {
       // "그림이 아님" 은 실패가 아니라 갈림길이다. 링크로 받아 준다.
       const message = describeError(err)
-      if (!message.includes('그림이 아닙니다')) {
-        notify(`그림을 받아오지 못했습니다 — ${message}`, 'error')
+      if (!message.includes(t('err.dropNotImage'))) {
+        notify(t('err.fetchImage', { reason: message }), 'error')
         return
       }
     }

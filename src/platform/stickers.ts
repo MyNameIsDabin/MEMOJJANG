@@ -18,6 +18,7 @@ import {
 import { files, baseName } from './files'
 import { isTauri } from './env'
 import { base64ToBlob, base64ToBytes, bytesToBase64 } from '../utils/bytes'
+import { t } from '../i18n'
 
 const DIR = 'stickers'
 
@@ -73,32 +74,32 @@ async function shrink(
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('그림을 줄이지 못했습니다.')
+  if (!ctx) throw new Error(t('err.shrink'))
   ctx.drawImage(bitmap, 0, 0, width, height)
   bitmap.close()
 
   const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
-  if (!out) throw new Error('그림을 줄이지 못했습니다.')
+  if (!out) throw new Error(t('err.shrink'))
   return { bytes: new Uint8Array(await out.arrayBuffer()), mime: 'image/png', width, height }
 }
 
 /** 그림을 골라 보관함에 담는다. 고르지 않고 닫으면 null. */
 export async function addStickerAsset(name: string): Promise<StickerAsset | null> {
-  if (!isTauri()) throw new Error('앱에서만 스티커를 담을 수 있습니다.')
+  if (!isTauri()) throw new Error(t('err.appOnlySticker'))
 
   const { open } = await import('@tauri-apps/plugin-dialog')
   const picked = await open({
     multiple: false,
-    filters: [{ name: '그림', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+    filters: [{ name: t('dialog.imageFilter'), extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
   })
   if (typeof picked !== 'string') return null
 
   const base64 = await files.readBinary(picked)
-  if (base64 === null) throw new Error('그림을 읽지 못했습니다.')
+  if (base64 === null) throw new Error(t('err.readImage'))
 
   const source = base64ToBlob(base64, mimeFor(picked))
   if (source.size > STICKER_MAX_BYTES) {
-    throw new Error(`그림이 너무 큽니다 (${Math.round(STICKER_MAX_BYTES / 1024 / 1024)}MB 까지).`)
+    throw new Error(t('err.tooBig', { mb: Math.round(STICKER_MAX_BYTES / 1024 / 1024) }))
   }
 
   const { bytes, mime, width, height } = await shrink(source)
@@ -130,14 +131,14 @@ function size(value: unknown): number {
 
 /** 고른 스티커들을 꾸러미 파일 하나로 내보낸다. 저장을 취소하면 false. */
 export async function exportStickerPack(assets: StickerAsset[]): Promise<boolean> {
-  if (!isTauri()) throw new Error('앱에서만 내보낼 수 있습니다.')
-  if (!assets.length) throw new Error('내보낼 스티커를 골라 주세요.')
+  if (!isTauri()) throw new Error(t('err.appOnlyExport'))
+  if (!assets.length) throw new Error(t('err.pickExport'))
 
   const { save } = await import('@tauri-apps/plugin-dialog')
   const path = await save({
-    title: '스티커 꾸러미 내보내기',
-    defaultPath: `스티커 꾸러미.${STICKER_PACK_EXT}`,
-    filters: [{ name: '메모짱 스티커 꾸러미', extensions: [STICKER_PACK_EXT] }],
+    title: t('dialog.packExport'),
+    defaultPath: `${t('dialog.packName')}.${STICKER_PACK_EXT}`,
+    filters: [{ name: t('dialog.packFilter'), extensions: [STICKER_PACK_EXT] }],
   })
   if (!path) return false
 
@@ -159,7 +160,7 @@ export async function exportStickerPack(assets: StickerAsset[]): Promise<boolean
     })
   }
 
-  if (!packed.length) throw new Error('담을 그림이 없습니다.')
+  if (!packed.length) throw new Error(t('err.noPacked'))
 
   const pack: StickerPack = {
     format: 'memojjang-stickers',
@@ -172,26 +173,26 @@ export async function exportStickerPack(assets: StickerAsset[]): Promise<boolean
 
 /** 꾸러미를 읽어 보관함에 더한다. 고르지 않고 닫으면 빈 배열. */
 export async function importStickerPack(): Promise<StickerAsset[]> {
-  if (!isTauri()) throw new Error('앱에서만 불러올 수 있습니다.')
+  if (!isTauri()) throw new Error(t('err.appOnlyImport'))
 
   const { open } = await import('@tauri-apps/plugin-dialog')
   const picked = await open({
     multiple: false,
-    filters: [{ name: '메모짱 스티커 꾸러미', extensions: [STICKER_PACK_EXT, 'json'] }],
+    filters: [{ name: t('dialog.packFilter'), extensions: [STICKER_PACK_EXT, 'json'] }],
   })
   if (typeof picked !== 'string') return []
 
   const text = await files.readText(picked)
-  if (text === null) throw new Error('파일을 읽지 못했습니다.')
+  if (text === null) throw new Error(t('err.readFile'))
 
   let pack: StickerPack
   try {
     pack = JSON.parse(text) as StickerPack
   } catch {
-    throw new Error('스티커 꾸러미 파일이 아닙니다.')
+    throw new Error(t('err.notPack'))
   }
   if (pack?.format !== 'memojjang-stickers' || !Array.isArray(pack.stickers)) {
-    throw new Error('스티커 꾸러미 파일이 아닙니다.')
+    throw new Error(t('err.notPack'))
   }
 
   const { writeFile, mkdir, BaseDirectory } = await fs()
@@ -209,7 +210,7 @@ export async function importStickerPack(): Promise<StickerAsset[]> {
     urlCache.set(file, URL.createObjectURL(new Blob([bytes as BlobPart], { type: item.mime })))
     added.push({
       id: newId(),
-      name: (item.name ?? '').trim().slice(0, 40) || '스티커',
+      name: (item.name ?? '').trim().slice(0, 40) || t('sticker.name'),
       file,
       // 남이 만든 꾸러미의 숫자다. 말도 안 되는 값이 들어오면 화면 계산이 통째로 어그러진다.
       naturalW: size(item.naturalW),
@@ -217,7 +218,7 @@ export async function importStickerPack(): Promise<StickerAsset[]> {
     })
   }
 
-  if (!added.length) throw new Error('꾸러미 안에 쓸 수 있는 스티커가 없습니다.')
+  if (!added.length) throw new Error(t('err.packEmpty'))
   return added
 }
 

@@ -13,10 +13,12 @@ import { Markdown } from './Markdown'
 import { HtmlPreview } from './HtmlPreview'
 import { JsonView } from './JsonView'
 import { Icon } from '../ui/Icon'
+import { useT } from '../i18n'
 
 const VIEWS: MemoView[] = ['plain', 'markdown', 'code', 'json', 'html']
 
 export function MemoBody({ note }: { note: MemoNote }) {
+  const say = useT()
   const view = note.view ?? 'plain'
   const autoDetect = useSettings((s) => s.memoAutoDetect)
   const [editing, setEditing] = useState(false)
@@ -72,7 +74,7 @@ export function MemoBody({ note }: { note: MemoNote }) {
           ref={areaRef}
           className={`memo__text${view === 'code' ? ' memo__text--code' : ''}`}
           value={note.body}
-          placeholder="여기에 아무거나…"
+          placeholder={say('memo.placeholder')}
           spellCheck={false}
           // 휠 클릭은 캔버스가 화면을 옮기는 데 써야 하므로 막지 않는다.
           onPointerDown={(e) => {
@@ -94,7 +96,7 @@ export function MemoBody({ note }: { note: MemoNote }) {
             if (e.button === 0) e.stopPropagation()
           }}
           onDoubleClick={() => setEditing(true)}
-          title="두 번 누르면 고칠 수 있습니다"
+          title={say('memo.editHint')}
         >
           {view === 'markdown' && <Markdown text={note.body} />}
           {view === 'json' && <JsonView text={note.body} />}
@@ -106,13 +108,13 @@ export function MemoBody({ note }: { note: MemoNote }) {
         <select
           className="memo__view"
           value={view}
-          title="보기 방식"
+          title={say('memo.view')}
           onPointerDown={(e) => e.stopPropagation()}
           onChange={(e) => setView(e.target.value as MemoView)}
         >
           {VIEWS.map((v) => (
             <option key={v} value={v}>
-              {VIEW_LABEL[v]}
+              {say(VIEW_LABEL[v])}
             </option>
           ))}
         </select>
@@ -122,14 +124,14 @@ export function MemoBody({ note }: { note: MemoNote }) {
             type="button"
             className="memo__act"
             aria-pressed={editing}
-            title={editing ? '그려서 보기' : '원문 고치기'}
+            title={say(editing ? 'memo.render' : 'memo.edit')}
             onClick={() => setEditing((v) => !v)}
           >
             <Icon name={editing ? 'fit' : 'pencil'} />
           </button>
         )}
 
-        <span className="memo__count">{note.body.length}자</span>
+        <span className="memo__count">{say('memo.chars', { n: note.body.length })}</span>
       </div>
     </div>
   )

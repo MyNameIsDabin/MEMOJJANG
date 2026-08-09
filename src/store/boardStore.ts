@@ -22,6 +22,7 @@ import {
 import { deleteImage } from '../platform/assets'
 import { useSettings } from './settingsStore'
 import { detectView } from '../notes/detect'
+import { t } from '../i18n'
 
 /** 되돌리기용 스냅샷. 구조 변경(추가/삭제/이동/크기)에만 쌓고 타이핑에는 쌓지 않는다.
  *  글자 되돌리기는 textarea 의 브라우저 기본 실행취소가 이미 해준다. */
@@ -282,10 +283,10 @@ export const useBoard = create<BoardState>()((set, get) => {
       const base = baseNote(kind, world, topZ() + 1)
       const note: Note =
         kind === 'todo'
-          ? { ...base, kind: 'todo', title: '할 일', items: [{ id: newId(), text: '', done: false }] }
+          ? { ...base, kind: 'todo', title: t('note.todo'), items: [{ id: newId(), text: '', done: false }] }
           : kind === 'link'
-            ? { ...base, kind: 'link', title: '바로가기', items: [] }
-            : { ...base, kind: 'memo', title: '메모', body: '' }
+            ? { ...base, kind: 'link', title: t('note.link'), items: [] }
+            : { ...base, kind: 'memo', title: t('note.memo'), body: '' }
       return insert(note)
     },
 
@@ -297,7 +298,7 @@ export const useBoard = create<BoardState>()((set, get) => {
         memoAutoDetect && body.trim()
           ? detectView(body, { userRules: memoUserRules, disabledBuiltins: memoDisabledBuiltins })
           : 'plain'
-      return insert({ ...base, kind: 'memo', title: '메모', body, view })
+      return insert({ ...base, kind: 'memo', title: t('note.memo'), body, view })
     },
 
     addImage: (image, world) => {
@@ -306,7 +307,7 @@ export const useBoard = create<BoardState>()((set, get) => {
       return insert({
         ...base,
         kind: 'image',
-        title: '이미지',
+        title: t('note.image'),
         ...image,
         w: size.w,
         h: size.h,

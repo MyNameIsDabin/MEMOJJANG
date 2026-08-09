@@ -6,8 +6,10 @@ import { openExternal } from '../platform/browser'
 import { Icon } from '../ui/Icon'
 import { Favicon } from './Favicon'
 import { hostOf, normalizeUrl } from '../utils/url'
+import { useT } from '../i18n'
 
 export function LinkBody({ note }: { note: LinkNote }) {
+  const say = useT()
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const write = (items: LinkItem[]) => useBoard.getState().patchNote(note.id, { items })
@@ -42,7 +44,7 @@ export function LinkBody({ note }: { note: LinkNote }) {
               <input
                 className="links__input"
                 value={item.label}
-                placeholder="별칭 (비우면 주소가 나옵니다)"
+                placeholder={say('link.label')}
                 autoFocus
                 onPointerDown={(e) => {
                   if (e.button === 0) e.stopPropagation()
@@ -64,10 +66,10 @@ export function LinkBody({ note }: { note: LinkNote }) {
               />
               <div className="links__editfoot">
                 <button type="button" className="links__act" onClick={() => closeEditor(item)}>
-                  확인
+                  {say('link.confirm')}
                 </button>
                 <button type="button" className="links__act links__act--drop" onClick={() => drop(item.id)}>
-                  삭제
+                  {say('link.remove')}
                 </button>
               </div>
             </div>
@@ -76,16 +78,16 @@ export function LinkBody({ note }: { note: LinkNote }) {
               <button
                 type="button"
                 className="links__go"
-                title={normalizeUrl(item.url) || '주소가 비어 있습니다'}
+                title={normalizeUrl(item.url) || say('link.noUrl')}
                 onClick={() => void openExternal(item.url)}
               >
                 <Favicon url={item.url} label={item.label} />
-                <span className="links__label">{item.label.trim() || hostOf(item.url) || '(빈 주소)'}</span>
+                <span className="links__label">{item.label.trim() || hostOf(item.url) || say('link.blank')}</span>
               </button>
               <button
                 type="button"
                 className="links__act"
-                title="고치기"
+                title={say('link.edit')}
                 onClick={() => setEditingId(item.id)}
               >
                 <Icon name="pencil" />
@@ -93,7 +95,7 @@ export function LinkBody({ note }: { note: LinkNote }) {
               <button
                 type="button"
                 className="links__act links__act--drop"
-                title="지우기"
+                title={say('link.remove')}
                 onClick={() => drop(item.id)}
               >
                 <Icon name="close" />
@@ -105,9 +107,9 @@ export function LinkBody({ note }: { note: LinkNote }) {
 
       <div className="links__foot">
         <button type="button" className="links__add" onClick={add}>
-          + 바로가기
+          {say('link.add')}
         </button>
-        <span>{note.items.length}개</span>
+        <span>{say('link.count', { n: note.items.length })}</span>
       </div>
     </div>
   )

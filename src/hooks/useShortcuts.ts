@@ -4,7 +4,7 @@ import { useBoard } from '../store/boardStore'
 import { useUi } from '../store/uiStore'
 import { dropPoint } from '../canvas/pointer'
 import { handlePasteEvent, schedulePasteFallback } from '../actions/paste'
-import { arrangeGrid, zoomToFit } from '../actions/layout'
+import { arrangeGrid, focusSelection, zoomToFit } from '../actions/layout'
 import { copyNotes } from '../actions/clip'
 import { isTextField } from '../utils/dom'
 
@@ -99,6 +99,17 @@ export function useShortcuts(): void {
 
       // 아래부터는 입력 칸의 기본 동작(실행취소·전체선택·글자삭제·붙여넣기)을 건드리면 안 된다.
       if (inField) return
+
+      /* 스페이스바 하나로 고른 노트를 화면 한가운데로 데려온다.
+         멀리 끌어다 놓고 잃어버렸을 때 목록을 열지 않고 바로 되찾는 길이다.
+         단추에 초점이 남아 있으면 비켜준다 — 스페이스는 그 단추를 누르는 키이기도 하다. */
+      if ((e.code === 'Space' || e.key === ' ') && !mod && !e.shiftKey && !e.altKey) {
+        if ((e.target as HTMLElement | null)?.closest?.('button, select, [role="button"]')) return
+        if (!board.selection.length) return
+        e.preventDefault()
+        focusSelection()
+        return
+      }
 
       if (mod && e.key.toLowerCase() === 'v') {
         // 막지 않는다 — 웹뷰가 paste 이벤트를 쏴 주면 그쪽이 더 정확하다.

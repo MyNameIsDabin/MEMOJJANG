@@ -3,6 +3,7 @@
 import { isTauri } from './env'
 import { normalizeUrl } from '../utils/url'
 import { describeError, notify } from '../ui/toast'
+import { t } from '../i18n'
 
 /** 열어 줄 스킴. `javascript:` 같은 것은 여는 순간 코드가 되므로 아예 받지 않는다.
  *  캔버스 파일은 남에게 받을 수 있으니 그 안의 주소도 남이 적은 것으로 보아야 한다. */
@@ -12,7 +13,7 @@ export async function openExternal(url: string): Promise<void> {
   const target = normalizeUrl(url)
   if (!target) return
   if (!OPENABLE.test(target)) {
-    notify('http 또는 https 주소만 열 수 있습니다.', 'error')
+    notify(t('toast.onlyHttp'), 'error')
     return
   }
   try {
@@ -23,6 +24,6 @@ export async function openExternal(url: string): Promise<void> {
       window.open(target, '_blank', 'noopener')
     }
   } catch (err) {
-    notify(`열지 못했습니다 — ${describeError(err)}`, 'error')
+    notify(t('toast.openFailed', { reason: describeError(err) }), 'error')
   }
 }

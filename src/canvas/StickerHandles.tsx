@@ -14,6 +14,7 @@ import { toWorld, useBoard, worldOf } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import { Icon } from '../ui/Icon'
 import { sizeOf } from './StickerLayer'
+import { useT } from '../i18n'
 
 /** Ctrl 을 누른 채 돌릴 때 끊어지는 각(도). */
 const ROTATE_STEP = 5
@@ -35,6 +36,7 @@ interface Transform {
 }
 
 export function StickerHandles({ id }: { id: string }) {
+  const t = useT()
   const sticker = useBoard((s) => s.stickers[id])
   const note = useBoard((s) => (sticker?.noteId ? s.notes[sticker.noteId] : undefined))
   const asset = useSettings((s) => s.stickerAssets.find((a) => a.id === sticker?.assetId))
@@ -170,7 +172,7 @@ export function StickerHandles({ id }: { id: string }) {
             key={corner.key}
             type="button"
             className="sthandles__grip"
-            title="끌어서 돌리고 키웁니다 (Ctrl: 5도씩 · Shift: 크기만)"
+            title={t('sticker.grip')}
             style={{
               width: 14 * k,
               height: 14 * k,
@@ -193,7 +195,7 @@ export function StickerHandles({ id }: { id: string }) {
       <button
         type="button"
         className="stlinker"
-        title="메모 위에 연결해 붙일 수 있어요"
+        title={t('sticker.link')}
         style={{
           left: at.x - w / 2,
           top: at.y + h / 2,
@@ -264,7 +266,7 @@ function NoteTargets() {
               className={`sttarget${big ? '' : ' sttarget--corner'}`}
               data-note-target={noteId}
               data-anchor={spot.value}
-              title={`${n.title} — ${spot.hint}`}
+              title={`${n.title} — ${spot.hintKey}`}
               style={{
                 left: n.x + n.w * fx,
                 top: n.y + n.h * fy,

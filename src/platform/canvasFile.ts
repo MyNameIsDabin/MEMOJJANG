@@ -11,6 +11,7 @@
 import { CANVAS_VERSION, newId, type CanvasDoc, type Note, type Sticker } from '../types'
 import { files, joinPath } from './files'
 import { base64ToBlob, bytesToBase64 } from '../utils/bytes'
+import { t } from '../i18n'
 
 /** `내 보드.mjb.json` -> `내 보드.mjb.assets` */
 export function assetsDirOf(canvasPath: string): string {
@@ -25,7 +26,7 @@ export function assetsDirOf(canvasPath: string): string {
  *  여기서 잘라 내도 잃는 것이 없다. */
 function safeKey(key: string): string {
   if (!key || key.includes('/') || key.includes('\\') || key.split(/[/\\]/).includes('..')) {
-    throw new Error(`그림 이름이 올바르지 않습니다: ${key}`)
+    throw new Error(t('err.badImageName', { key }))
   }
   return key
 }
@@ -48,12 +49,12 @@ export async function readCanvas(path: string): Promise<CanvasDoc | null> {
   try {
     parsed = JSON.parse(raw)
   } catch (err) {
-    throw new Error(`캔버스 파일을 읽을 수 없습니다 (내용이 깨졌습니다): ${String(err)}`)
+    throw new Error(t('err.canvasBroken', { reason: String(err) }))
   }
 
   const doc = parsed as Partial<CanvasDoc>
   if (!Array.isArray(doc.notes)) {
-    throw new Error('캔버스 파일 형식이 아닙니다.')
+    throw new Error(t('err.notCanvas'))
   }
 
   return {
@@ -95,7 +96,7 @@ function upgradeNote(raw: unknown): Note | null {
     return {
       ...base,
       kind: 'image',
-      title: (note.title as string) || '이미지',
+      title: (note.title as string) || t('note.image'),
       file: payload.file,
       naturalW: payload.naturalW ?? 0,
       naturalH: payload.naturalH ?? 0,
@@ -106,7 +107,7 @@ function upgradeNote(raw: unknown): Note | null {
     ...base,
     id: (note.id as string) || newId(),
     kind: 'memo',
-    title: (note.title as string) || '메모',
+    title: (note.title as string) || t('note.memo'),
     body: payload?.text ?? '',
   } as Note
 }

@@ -1,3 +1,4 @@
+import type { MessageKey } from '../i18n'
 /** 테마 색.
  *
  *  CSS 가 아니라 여기 있는 이유: 사용자가 색을 직접 고칠 수 있어야 하는데,
@@ -127,64 +128,65 @@ export const THEMES: Record<ThemeKey, Palette> = {
   },
 }
 
-export const THEME_OPTIONS: { key: ThemeKey; label: string; note: string }[] = [
-  { key: 'night', label: '밤', note: '어두운 캔버스 · 기본값' },
-  { key: 'day', label: '낮', note: '밝은 종이 느낌' },
-  { key: 'classic', label: '클래식', note: '그 시절 청록 바탕화면' },
+/** 테마 이름은 말마다 다르므로 열쇠만 들고 있다가 화면에서 옮긴다. */
+export const THEME_OPTIONS: { key: ThemeKey; labelKey: MessageKey; noteKey: MessageKey }[] = [
+  { key: 'night', labelKey: 'theme.night', noteKey: 'theme.night.note' },
+  { key: 'day', labelKey: 'theme.day', noteKey: 'theme.day.note' },
+  { key: 'classic', labelKey: 'theme.classic', noteKey: 'theme.classic.note' },
 ]
 
 export interface PaletteToken {
   key: keyof Palette
-  label: string
+  labelKey: MessageKey
   /** 투명도까지 고를 수 있는 색인가 */
   alpha?: boolean
 }
 
 /** 편집기에 보여줄 차례. 눈에 띄는 것부터 위로 둔다. */
-export const PALETTE_GROUPS: { title: string; tokens: PaletteToken[] }[] = [
+export const PALETTE_GROUPS: { titleKey: MessageKey; tokens: PaletteToken[] }[] = [
   {
-    title: '캔버스',
+    titleKey: 'palette.groupCanvas',
     tokens: [
-      { key: 'canvas', label: '바닥' },
-      { key: 'canvasDot', label: '격자 점' },
+      { key: 'canvas', labelKey: 'palette.canvas' },
+      { key: 'canvasDot', labelKey: 'palette.canvasDot' },
     ],
   },
   {
-    title: '노트',
+    titleKey: 'palette.groupNote',
     tokens: [
-      { key: 'face', label: '노트 바탕' },
-      { key: 'face2', label: '입력칸 바탕' },
-      { key: 'bevelLight', label: '테두리 밝은 쪽' },
-      { key: 'bevelDark', label: '테두리 어두운 쪽' },
-      { key: 'line', label: '구분선' },
-      { key: 'shadow', label: '그림자', alpha: true },
+      { key: 'face', labelKey: 'palette.face' },
+      { key: 'face2', labelKey: 'palette.face2' },
+      { key: 'bevelLight', labelKey: 'palette.bevelLight' },
+      { key: 'bevelDark', labelKey: 'palette.bevelDark' },
+      { key: 'line', labelKey: 'palette.line' },
+      { key: 'shadow', labelKey: 'palette.shadow', alpha: true },
     ],
   },
   {
-    title: '글자와 강조',
+    titleKey: 'palette.groupText',
     tokens: [
-      { key: 'text', label: '글자' },
-      { key: 'textDim', label: '흐린 글자' },
-      { key: 'sel', label: '선택·강조' },
+      { key: 'text', labelKey: 'palette.text' },
+      { key: 'textDim', labelKey: 'palette.textDim' },
+      { key: 'sel', labelKey: 'palette.sel' },
     ],
   },
   {
-    title: 'JSON 색',
+    titleKey: 'palette.groupJson',
     tokens: [
-      { key: 'syntaxKey', label: '이름' },
-      { key: 'syntaxString', label: '글자값' },
-      { key: 'syntaxNumber', label: '숫자' },
-      { key: 'syntaxLiteral', label: 'true · false · null' },
+      { key: 'syntaxKey', labelKey: 'palette.syntaxKey' },
+      { key: 'syntaxString', labelKey: 'palette.syntaxString' },
+      { key: 'syntaxNumber', labelKey: 'palette.syntaxNumber' },
+      { key: 'syntaxLiteral', labelKey: 'palette.syntaxLiteral' },
     ],
   },
   {
-    title: '창 테두리',
+    titleKey: 'palette.groupChrome',
     tokens: [
-      { key: 'chromeBg', label: '제목 줄 바탕' },
-      { key: 'chromeFg', label: '제목 줄 글자' },
-      { key: 'chromeLine', label: '경계선' },
-      { key: 'chromeHover', label: '단추 위에 얹었을 때', alpha: true },
-      { key: 'chromePress', label: '단추 누를 때', alpha: true },
+      { key: 'chromeBg', labelKey: 'palette.chromeBg' },
+      { key: 'chromeFg', labelKey: 'palette.chromeFg' },
+      { key: 'chromeLine', labelKey: 'palette.chromeLine' },
+      { key: 'chromeHover', labelKey: 'palette.chromeHover', alpha: true },
+      { key: 'chromePress', labelKey: 'palette.chromePress', alpha: true },
     ],
   },
 ]

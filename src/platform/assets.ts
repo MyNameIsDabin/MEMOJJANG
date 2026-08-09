@@ -4,6 +4,7 @@
  *  활성 캔버스 경로를 여기서 찾아 붙인다. */
 import { useCanvases } from '../store/canvasStore'
 import { canvasImageUrl, deleteCanvasImage, saveCanvasImage } from './canvasFile'
+import { t } from '../i18n'
 
 function activePath(): string | null {
   return useCanvases.getState().activePath()
@@ -11,7 +12,7 @@ function activePath(): string | null {
 
 export async function saveImage(bytes: Uint8Array, mime: string): Promise<string> {
   const path = activePath()
-  if (!path) throw new Error('열려 있는 캔버스가 없습니다.')
+  if (!path) throw new Error(t('err.noCanvas'))
   return saveCanvasImage(path, bytes, mime)
 }
 

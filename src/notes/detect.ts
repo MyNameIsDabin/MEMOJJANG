@@ -11,9 +11,11 @@
  *  사용자에게 코드를 적게 하지 않는 이유: 캔버스 파일이 실행 경로가 되어 버린다.
  */
 import type { MemoView } from '../types'
+import type { MessageKey } from '../i18n'
 
 export interface UserRule {
   id: string
+  /** 사람이 직접 적는 이름이라 번역하지 않는다 */
   label: string
   view: MemoView
   /** 어떻게 견줄지 */
@@ -23,30 +25,25 @@ export interface UserRule {
 
 export interface BuiltinRule {
   id: string
-  label: string
+  labelKey: MessageKey
   view: MemoView
   /** 설정 화면에 보여줄 판단 근거 설명 */
-  note: string
+  noteKey: MessageKey
 }
 
 export const BUILTIN_RULES: BuiltinRule[] = [
-  { id: 'json', label: 'JSON', view: 'json', note: '글 전체가 JSON 으로 읽힐 때' },
-  { id: 'html', label: 'HTML', view: 'html', note: '<태그>로 시작하거나 태그가 여럿 보일 때' },
-  {
-    id: 'markdown',
-    label: '마크다운',
-    view: 'markdown',
-    note: '# 제목, - 목록, **굵게**, [링크](…), ``` 같은 표시가 여럿 보일 때',
-  },
-  { id: 'code', label: '코드', view: 'code', note: '코드처럼 생긴 줄이 많을 때' },
+  { id: 'json', labelKey: 'view.json', view: 'json', noteKey: 'detect.noteJson' },
+  { id: 'html', labelKey: 'view.html', view: 'html', noteKey: 'detect.noteHtml' },
+  { id: 'markdown', labelKey: 'view.markdown', view: 'markdown', noteKey: 'detect.noteMarkdown' },
+  { id: 'code', labelKey: 'view.code', view: 'code', noteKey: 'detect.noteCode' },
 ]
 
-export const VIEW_LABEL: Record<MemoView, string> = {
-  plain: '그대로',
-  markdown: '마크다운',
-  code: '코드',
-  json: 'JSON',
-  html: 'HTML',
+export const VIEW_LABEL: Record<MemoView, MessageKey> = {
+  plain: 'view.plain',
+  markdown: 'view.markdown',
+  code: 'view.code',
+  json: 'view.json',
+  html: 'view.html',
 }
 
 /** 이 점수를 넘겨야 그 유형이라고 본다. 애매하면 그대로 두는 편이 낫다. */

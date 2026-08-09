@@ -1,8 +1,10 @@
 import { useShallow } from 'zustand/react/shallow'
 import { useToasts } from './toast'
+import { useT } from '../i18n'
 import './toast.css'
 
 export function Toasts() {
+  const say = useT()
   const toasts = useToasts(useShallow((s) => s.toasts))
   if (!toasts.length) return null
 
@@ -13,7 +15,7 @@ export function Toasts() {
           key={t.id}
           type="button"
           className={`toast bevel-out toast--${t.kind}`}
-          title="눌러서 닫기"
+          title={say('toast.close')}
           onClick={() => useToasts.getState().dismiss(t.id)}
         >
           {t.message}

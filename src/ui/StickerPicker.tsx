@@ -19,6 +19,7 @@ import { isTauri } from '../platform/env'
 import { useStickerUrl } from '../canvas/StickerLayer'
 import { notify } from './toast'
 import { Icon } from './Icon'
+import { t, useT } from '../i18n'
 import './stickerpicker.css'
 
 export function StickerPicker({
@@ -33,6 +34,7 @@ export function StickerPicker({
   onClose: () => void
 }) {
   const assets = useSettings((s) => s.stickerAssets)
+  const say = useT()
   const ref = useRef<HTMLDivElement>(null)
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState('')
@@ -101,7 +103,7 @@ export function StickerPicker({
       const chosen = assets.filter((a) => picking?.includes(a.id))
       const done = await exportStickerPack(chosen)
       if (done) {
-        notify(`스티커 ${chosen.length}개를 내보냈습니다.`)
+        notify(t('stickers.exported', { n: chosen.length }))
         setPicking(null)
       }
     } catch (err) {
@@ -118,7 +120,7 @@ export function StickerPicker({
       if (added.length) {
         const { set, stickerAssets } = useSettings.getState()
         set('stickerAssets', [...stickerAssets, ...added])
-        notify(`스티커 ${added.length}개를 보관함에 담았습니다.`)
+        notify(t('stickers.imported', { n: added.length }))
       }
     } catch (err) {
       notify(err instanceof Error ? err.message : String(err))
@@ -135,10 +137,10 @@ export function StickerPicker({
       ref={ref}
       style={{ left: screenX, top: screenY }}
       role="dialog"
-      aria-label="스티커 고르기"
+      aria-label={say('stickers.title')}
     >
       {empty ? (
-        <p className="stpicker__empty">보관함이 비어 있습니다. 그림을 담거나 꾸러미를 불러오세요.</p>
+        <p className="stpicker__empty">{say('stickers.empty')}</p>
       ) : (
         <div className="stpicker__grid">
           {assets.map((asset) => (
@@ -160,13 +162,13 @@ export function StickerPicker({
             className="btn stpicker__small"
             onClick={() => setPicking(picking.length === assets.length ? [] : assets.map((a) => a.id))}
           >
-            {picking.length === assets.length ? '모두 끄기' : '모두 고르기'}
+            {say(picking.length === assets.length ? 'stickers.selectNone' : 'stickers.selectAll')}
           </button>
           <button className="btn stpicker__small" disabled={!picking.length || busy} onClick={() => void sendOut()}>
-            {picking.length}개 내보내기
+            {say('stickers.exportCount', { n: picking.length })}
           </button>
           <button className="btn stpicker__small" onClick={() => setPicking(null)}>
-            취소
+            {say('stickers.cancel')}
           </button>
         </div>
       )}
@@ -176,7 +178,7 @@ export function StickerPicker({
           <input
             className="stpicker__name"
             value={name}
-            placeholder="스티커 이름"
+            placeholder={say('stickers.namePlaceholder')}
             spellCheck={false}
             autoFocus
             onChange={(e) => setName(e.target.value)}
@@ -188,30 +190,30 @@ export function StickerPicker({
             }}
           />
           <button className="btn" disabled={!isTauri() || busy} onClick={() => void add()}>
-            그림 고르기…
+            {say('stickers.pickImage')}
           </button>
         </div>
       ) : (
         picking === null && (
           <div className="stpicker__foot">
             <button className="btn stpicker__small" onClick={() => setAdding(true)}>
-              ＋ 담기
+              {say('stickers.add')}
             </button>
             <button
               className="btn stpicker__small"
               disabled={empty || busy}
-              title="고른 스티커를 그림까지 함께 파일 하나로 내보냅니다"
+              title={say('stickers.exportHint')}
               onClick={() => setPicking([])}
             >
-              내보내기
+              {say('stickers.export')}
             </button>
             <button
               className="btn stpicker__small"
               disabled={!isTauri() || busy}
-              title="남이 만든 스티커 꾸러미를 보관함에 담습니다"
+              title={say('stickers.importHint')}
               onClick={() => void bringIn()}
             >
-              불러오기
+              {say('stickers.import')}
             </button>
           </div>
         )
@@ -234,13 +236,14 @@ function Tile({
   onDrop: () => void
 }) {
   const url = useStickerUrl(asset.file)
+  const say = useT()
   return (
     <div className="stpicker__tile">
       <button
         type="button"
         className={`stpicker__pick${chosen ? ' stpicker__pick--on' : ''}`}
         aria-pressed={picking ? chosen : undefined}
-        title={picking ? `'${asset.name}' 고르기` : asset.name}
+        title={picking ? say('stickers.pick', { name: asset.name }) : asset.name}
         onClick={onPick}
       >
         {url ? <img src={url} alt={asset.name} draggable={false} /> : <span>{asset.name}</span>}
@@ -251,7 +254,7 @@ function Tile({
         <button
           type="button"
           className="stpicker__drop"
-          title={`'${asset.name}' 을(를) 보관함에서 빼기`}
+          title={say('stickers.drop', { name: asset.name })}
           onClick={onDrop}
         >
           <Icon name="close" />

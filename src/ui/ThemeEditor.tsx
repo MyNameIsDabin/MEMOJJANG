@@ -10,9 +10,11 @@ import {
   type PaletteToken,
 } from '../theme/palette'
 import { Icon } from './Icon'
+import { useT } from '../i18n'
 import './themeEditor.css'
 
 export function ThemeEditor() {
+  const say = useT()
   const theme = useSettings((s) => s.theme)
   const overrides = useSettings((s) => s.themeColors[s.theme])
   const palette = resolvePalette(theme, overrides)
@@ -20,13 +22,11 @@ export function ThemeEditor() {
 
   return (
     <div className="themeedit">
-      <p className="settings__note">
-        고친 색은 이 테마에만 남습니다. 다른 테마로 옮기면 그 테마의 색이 그대로 나옵니다.
-      </p>
+      <p className="settings__note">{say('theme.editNote')}</p>
 
       {PALETTE_GROUPS.map((group) => (
-        <div key={group.title} className="themeedit__group">
-          <h3 className="themeedit__title">{group.title}</h3>
+        <div key={group.titleKey} className="themeedit__group">
+          <h3 className="themeedit__title">{say(group.titleKey)}</h3>
           {group.tokens.map((token) => (
             <ColorRow key={token.key} token={token} value={palette[token.key]} theme={theme} />
           ))}
@@ -34,14 +34,14 @@ export function ThemeEditor() {
       ))}
 
       <div className="themeedit__foot">
-        <span>{changedCount ? `${changedCount}개 고침` : '기본값 그대로'}</span>
+        <span>{changedCount ? say('theme.changed', { n: changedCount }) : say('theme.untouched')}</span>
         <button
           type="button"
           className="btn"
           disabled={!changedCount}
           onClick={() => useSettings.getState().resetThemeColors()}
         >
-          이 테마 전체 되돌리기
+          {say('theme.resetAll')}
         </button>
       </div>
     </div>
@@ -57,6 +57,7 @@ function ColorRow({
   value: string
   theme: keyof typeof THEMES
 }) {
+  const say = useT()
   const { hex, alpha } = splitColor(value)
   const isDefault = value === THEMES[theme][token.key]
 
@@ -77,7 +78,7 @@ function ColorRow({
         value={hex}
         onChange={(e) => update({ hex: e.target.value })}
       />
-      <span className="colorrow__label">{token.label}</span>
+      <span className="colorrow__label">{say(token.labelKey)}</span>
 
       {token.alpha && (
         <span className="colorrow__alpha">
@@ -86,7 +87,7 @@ function ColorRow({
             min={0}
             max={100}
             value={alpha}
-            aria-label={`${token.label} 투명도`}
+            aria-label={say('theme.alphaOf', { name: say(token.labelKey) })}
             onChange={(e) => update({ alpha: Number(e.target.value) })}
           />
           <span className="colorrow__pct">{alpha}%</span>
@@ -98,7 +99,7 @@ function ColorRow({
       <button
         type="button"
         className="colorrow__reset"
-        title="이 색만 되돌리기"
+        title={say('theme.resetOne')}
         disabled={isDefault}
         onClick={() => useSettings.getState().resetThemeColor(token.key)}
       >

@@ -13,6 +13,7 @@ import { isTauri } from '../platform/env'
 import { isTextField } from '../utils/dom'
 import { describeError, notify } from '../ui/toast'
 import { isNoteClip, pasteNotes } from './clip'
+import { t } from '../i18n'
 
 async function measure(blob: Blob): Promise<{ width: number; height: number }> {
   try {
@@ -42,7 +43,7 @@ export function addTextClip(text: string, world: { x: number; y: number }): void
   if (isNoteClip(text)) {
     void pasteNotes(text, world).catch((err) => {
       console.error('[clip] 메모지 붙여넣기 실패', err)
-      notify(`메모지를 붙여넣지 못했습니다 — ${describeError(err)}`, 'error')
+      notify(t('toast.pasteNoteFailed', { reason: describeError(err) }), 'error')
     })
     return
   }
@@ -65,7 +66,7 @@ function appendToSelectedLinkNote(text: string): boolean {
     items: [...note.items, ...urls.map((url) => ({ id: newId(), url, label: '' }))],
   })
   // 새 노트가 안 생기므로 아무 일도 없던 것처럼 보일 수 있다. 어디로 갔는지 알려 준다.
-  notify(`바로가기 ${urls.length}개를 "${note.title}" 에 넣었습니다.`)
+  notify(t('toast.linksAdded', { n: urls.length, title: note.title }))
   return true
 }
 
@@ -79,7 +80,7 @@ export async function addImageFromFile(world: { x: number; y: number }): Promise
     await addImageBlob(blob, world)
   } catch (err) {
     console.error('[image] 그림 불러오기 실패', err)
-    notify(`그림을 불러오지 못했습니다 — ${describeError(err)}`, 'error')
+    notify(t('toast.imageFailed', { reason: describeError(err) }), 'error')
   }
 }
 
@@ -97,15 +98,15 @@ async function pickImageFile(): Promise<Blob | null> {
 
   const { open } = await import('@tauri-apps/plugin-dialog')
   const picked = await open({
-    title: '그림 불러오기',
+    title: t('dialog.imageTitle'),
     multiple: false,
     directory: false,
-    filters: [{ name: '그림', extensions: IMAGE_EXTENSIONS }],
+    filters: [{ name: t('dialog.imageFilter'), extensions: IMAGE_EXTENSIONS }],
   })
   if (typeof picked !== 'string') return null
 
   const base64 = await files.readBinary(picked)
-  if (!base64) throw new Error('파일을 읽지 못했습니다')
+  if (!base64) throw new Error(t('err.readFile'))
 
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)
@@ -141,7 +142,7 @@ function pickImage(data: DataTransfer): File | null {
 
 function reportPasteFailure(err: unknown): void {
   console.error('[paste] 이미지 붙여넣기 실패', err)
-  notify(`이미지를 붙여넣지 못했습니다 — ${describeError(err)}`, 'error')
+  notify(t('toast.pasteImageFailed', { reason: describeError(err) }), 'error')
 }
 
 /* ── 한 번의 Ctrl+V, 두 개의 경로 ────────────────────────────────────────
@@ -213,7 +214,7 @@ export async function pasteFromClipboard(world: { x: number; y: number }): Promi
       if (claimPaste()) addTextClip(text, world)
       return
     }
-    notify('클립보드에 붙여넣을 만한 것이 없습니다.')
+    notify(t('toast.clipboardEmpty'))
   } catch (err) {
     reportPasteFailure(err)
   }
@@ -235,7 +236,7 @@ async function pasteImageFromClipboard(world: { x: number; y: number }): Promise
     }
 
     const png = await rgbaToPngBlob(rgba, size.width, size.height)
-    if (!png) throw new Error('png 로 변환하지 못했습니다')
+    if (!png) throw new Error(t('err.pngConvert'))
     if (claimPaste()) await addImageBlob(png, world)
     // 이미 처리됐더라도 "그림이 있었다" 는 사실은 그대로다 — 텍스트로 넘어가면 안 된다.
     return true

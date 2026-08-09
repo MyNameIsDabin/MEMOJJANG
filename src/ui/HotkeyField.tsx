@@ -2,6 +2,7 @@
  *  조합을 글자로 적게 하는 것보다, 그냥 눌러 보게 하는 편이 훨씬 덜 헷갈린다. */
 import { useEffect, useState } from 'react'
 import { DEFAULT_HOTKEY, formatAccelerator } from '../store/settingsStore'
+import { useT } from '../i18n'
 
 /** e.code 를 Tauri 가 알아듣는 키 이름으로 옮긴다. */
 function keyName(code: string): string | null {
@@ -60,6 +61,7 @@ export function HotkeyField({
 }) {
   const [capturing, setCapturing] = useState(false)
   const [hint, setHint] = useState<string | null>(null)
+  const t = useT()
 
   useEffect(() => {
     if (!capturing) setHint(null)
@@ -76,7 +78,7 @@ export function HotkeyField({
 
     const accelerator = toAccelerator(e)
     if (!accelerator) {
-      setHint('Ctrl · Alt · Shift 중 하나를 함께 눌러 주세요')
+      setHint(t('hotkey.needModifier'))
       return
     }
     onChange(accelerator)
@@ -92,14 +94,14 @@ export function HotkeyField({
         onBlur={() => setCapturing(false)}
         onKeyDown={capturing ? onKeyDown : undefined}
       >
-        {capturing ? '눌러 보세요…' : value ? formatAccelerator(value) : '꺼짐'}
+        {capturing ? t('hotkey.press') : value ? formatAccelerator(value) : t('hotkey.off')}
       </button>
 
       <button type="button" className="btn" onClick={() => onChange(DEFAULT_HOTKEY)} disabled={value === DEFAULT_HOTKEY}>
-        기본값
+        {t('hotkey.default')}
       </button>
       <button type="button" className="btn" onClick={() => onChange(null)} disabled={value === null}>
-        끄기
+        {t('hotkey.clear')}
       </button>
 
       {hint && <span className="hotkey__hint">{hint}</span>}

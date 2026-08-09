@@ -10,6 +10,7 @@ import { useSettings } from '../store/settingsStore'
 import { cropShot, endCapture, type Shot } from '../platform/capture'
 import { addImageBlob } from '../actions/paste'
 import { describeError, notify } from './toast'
+import { useT } from '../i18n'
 import './capture.css'
 
 interface Rect {
@@ -32,6 +33,7 @@ export function CaptureOverlay({
   onDone: () => void
 }) {
   const [rect, setRect] = useState<Rect | null>(null)
+  const t = useT()
   const start = useRef<{ x: number; y: number } | null>(null)
   const busy = useRef(false)
 
@@ -107,7 +109,7 @@ export function CaptureOverlay({
       await endCapture(useSettings.getState().alwaysOnTop)
       URL.revokeObjectURL(shot.url)
       onDone()
-      notify(`캡처하지 못했습니다 — ${describeError(err)}`, 'error')
+      notify(t('toast.cropFailed', { reason: describeError(err) }), 'error')
     }
   }
 
@@ -156,8 +158,8 @@ export function CaptureOverlay({
 
       {!rect && (
         <div className="capture__hint">
-          <span>담고 싶은 자리를 끌어서 고르세요</span>
-          <span className="capture__hintkey">Esc 로 그만두기</span>
+          <span>{t('capture.hint')}</span>
+          <span className="capture__hintkey">{t('capture.exit')}</span>
         </div>
       )}
     </div>

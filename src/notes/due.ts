@@ -1,5 +1,6 @@
 /** 할 일 마감 시각을 사람이 읽는 말과 진행도로 바꾼다. */
 import type { TodoItem } from '../types'
+import { t, type MessageKey } from '../i18n'
 
 const SECOND = 1000
 const MINUTE = 60 * SECOND
@@ -34,17 +35,20 @@ export function describeDue(item: TodoItem, now: number): DueView | null {
   const minutes = Math.ceil(gap / MINUTE)
   const seconds = Math.ceil(gap / SECOND)
 
-  let amount: string
-  if (hours >= 24) amount = `${days}일`
-  else if (minutes >= 60) amount = `${hours}시간`
-  else if (seconds >= 60) amount = `${minutes}분`
-  else amount = `${seconds}초`
+  // 남은 쪽과 지난 쪽을 따로 뽑아 둔다. 말에 따라 어순이 달라서 "{양} + 남음" 으로
+  // 이어 붙이면 영어에서 무너진다.
+  let key: MessageKey
+  let n: number
+  if (hours >= 24) [key, n] = [overdue ? 'due.overDays' : 'due.leftDays', days]
+  else if (minutes >= 60) [key, n] = [overdue ? 'due.overHours' : 'due.leftHours', hours]
+  else if (seconds >= 60) [key, n] = [overdue ? 'due.overMinutes' : 'due.leftMinutes', minutes]
+  else [key, n] = [overdue ? 'due.overSeconds' : 'due.leftSeconds', seconds]
 
   const start = item.dueSetAt ?? item.due - ASSUMED_WINDOW
   const span = Math.max(1, item.due - start)
   const progress = Math.min(1, Math.max(0, (now - start) / span))
 
-  return { label: `${amount} ${overdue ? '지남' : '남음'}`, overdue, progress }
+  return { label: t(key, { n }), overdue, progress }
 }
 
 /** 다음에 화면을 새로 그릴 때까지 기다릴 시간.
@@ -81,33 +85,34 @@ export function suggestedDue(now: number): number {
 
 /** 지금부터 얼마 뒤로 잡을지. 짧은 마감을 자주 쓰므로 분 단위부터 갖춘다. */
 export interface DuePreset {
-  label: string
+  labelKey: MessageKey
+  n: number
   offset: number
 }
 
 export const DUE_PRESETS: { unit: string; items: DuePreset[] }[] = [
   {
-    unit: '분',
+    unit: 'minute',
     items: [
-      { label: '5분', offset: 5 * MINUTE },
-      { label: '15분', offset: 15 * MINUTE },
-      { label: '30분', offset: 30 * MINUTE },
+      { labelKey: 'due.minutes', n: 5, offset: 5 * MINUTE },
+      { labelKey: 'due.minutes', n: 15, offset: 15 * MINUTE },
+      { labelKey: 'due.minutes', n: 30, offset: 30 * MINUTE },
     ],
   },
   {
-    unit: '시간',
+    unit: 'hour',
     items: [
-      { label: '1시간', offset: HOUR },
-      { label: '2시간', offset: 2 * HOUR },
-      { label: '3시간', offset: 3 * HOUR },
+      { labelKey: 'due.hours', n: 1, offset: HOUR },
+      { labelKey: 'due.hours', n: 2, offset: 2 * HOUR },
+      { labelKey: 'due.hours', n: 3, offset: 3 * HOUR },
     ],
   },
   {
-    unit: '일',
+    unit: 'day',
     items: [
-      { label: '1일', offset: DAY },
-      { label: '3일', offset: 3 * DAY },
-      { label: '7일', offset: 7 * DAY },
+      { labelKey: 'due.days', n: 1, offset: DAY },
+      { labelKey: 'due.days', n: 3, offset: 3 * DAY },
+      { labelKey: 'due.days', n: 7, offset: 7 * DAY },
     ],
   },
 ]

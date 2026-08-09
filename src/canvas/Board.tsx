@@ -14,6 +14,7 @@ import { useSnapGhost } from './snapGhost'
 import { useUi } from '../store/uiStore'
 import { handleDrop, shouldHandleDrop } from '../actions/drop'
 import { lastPointer } from './pointer'
+import { useT } from '../i18n'
 import './board.css'
 
 /** 커서 밑에 "그 방향으로 더 굴릴 수 있는" 칸이 있는가.
@@ -67,6 +68,7 @@ export function Board() {
   const [marquee, setMarquee] = useState<Marquee | null>(null)
   const [menu, setMenu] = useState<MenuAnchor | null>(null)
   const [dropping, setDropping] = useState(false)
+  const say = useT()
   /** 꾸미기 모드에서 우클릭한 자리 — 스티커 서랍이 여기에 뜬다. */
   const [drawer, setDrawer] = useState<{ screenX: number; screenY: number; world: { x: number; y: number } } | null>(
     null,
@@ -325,7 +327,7 @@ export function Board() {
 
       {dropping && (
         <div className="board__drop">
-          <span className="board__droptag">여기에 놓으면 그림이 됩니다</span>
+          <span className="board__droptag">{say('board.drop')}</span>
         </div>
       )}
 

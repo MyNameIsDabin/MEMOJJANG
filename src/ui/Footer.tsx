@@ -6,6 +6,7 @@ import { useUi } from '../store/uiStore'
 import { setAlwaysOnTop } from '../platform/window'
 import { Icon } from './Icon'
 import { NoteListMenu } from './NoteListMenu'
+import { useT } from '../i18n'
 import './footer.css'
 
 export function Footer() {
@@ -14,6 +15,7 @@ export function Footer() {
   const alwaysOnTop = useSettings((s) => s.alwaysOnTop)
   const canvasName = useCanvases((s) => s.canvases.find((c) => c.id === s.activeId)?.name ?? null)
   const listOpen = useUi((s) => s.noteList)
+  const say = useT()
 
   const zoomBy = (factor: number) =>
     useBoard.getState().zoomAt(window.innerWidth / 2, window.innerHeight / 2, factor)
@@ -30,7 +32,7 @@ export function Footer() {
         className="footer__btn"
         aria-pressed={listOpen}
         onClick={() => useUi.getState().toggleNoteList()}
-        title="노트 목록에서 찾아가기"
+        title={say('footer.noteList')}
       >
         <Icon name="search" />
       </button>
@@ -38,22 +40,22 @@ export function Footer() {
 
       <span className="footer__info">
         {canvasName && <span className="footer__name">{canvasName}</span>}
-        <span>노트 {count}장</span>
+        <span>{say('footer.notes', { n: count })}</span>
       </span>
 
       <span className="footer__gap" />
 
-      <button className="footer__btn" onClick={() => zoomBy(1 / 1.25)} disabled={zoom <= MIN_ZOOM} title="축소">
+      <button className="footer__btn" onClick={() => zoomBy(1 / 1.25)} disabled={zoom <= MIN_ZOOM} title={say('footer.zoomOut')}>
         −
       </button>
       <button
         className="footer__btn footer__zoom"
         onClick={() => useBoard.getState().setViewport((vp) => ({ ...vp, zoom: 1 }))}
-        title="100% 로 되돌리기 (Ctrl+0)"
+        title={say('footer.zoomReset')}
       >
         {Math.round(zoom * 100)}%
       </button>
-      <button className="footer__btn" onClick={() => zoomBy(1.25)} disabled={zoom >= MAX_ZOOM} title="확대">
+      <button className="footer__btn" onClick={() => zoomBy(1.25)} disabled={zoom >= MAX_ZOOM} title={say('footer.zoomIn')}>
         +
       </button>
 
@@ -61,7 +63,7 @@ export function Footer() {
         className="footer__btn"
         aria-pressed={alwaysOnTop}
         onClick={toggleTop}
-        title="다른 창 위에 항상 띄우기"
+        title={say('footer.onTop')}
       >
         <Icon name="pin" />
       </button>

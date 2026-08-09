@@ -8,6 +8,7 @@ import { CanvasTabs } from './CanvasTabs'
 import { Toolbar } from './Toolbar'
 import { Icon } from './Icon'
 import { isTauri } from '../platform/env'
+import { useT } from '../i18n'
 import './chrome.css'
 
 async function currentWindow() {
@@ -44,6 +45,7 @@ function useMaximized(): boolean {
 
 export function TitleBar() {
   const maximized = useMaximized()
+  const say = useT()
 
   const run = (action: 'minimize' | 'toggle' | 'close') => async () => {
     if (!isTauri()) return
@@ -58,7 +60,7 @@ export function TitleBar() {
       <div className="titlebar" data-tauri-drag-region>
         <span className="titlebar__mark" data-tauri-drag-region>
           <Icon name="mark" />
-          메모짱
+          {say('app.name')}
         </span>
 
         {/* 도구 줄이 남는 자리를 다 차지하고, 아이콘 오른쪽의 빈 곳이 창을 끄는 손잡이가 된다 */}
@@ -80,15 +82,16 @@ function WindowControls({
   maximized: boolean
   run: (action: 'minimize' | 'toggle' | 'close') => () => Promise<void>
 }) {
+  const say = useT()
   return (
     <div className="wincontrols">
-      <button type="button" className="wincontrols__btn" title="최소화" onClick={run('minimize')}>
+      <button type="button" className="wincontrols__btn" title={say('win.minimize')} onClick={run('minimize')}>
         <Icon name="winMinimize" />
       </button>
       <button
         type="button"
         className="wincontrols__btn"
-        title={maximized ? '이전 크기로' : '최대화'}
+        title={say(maximized ? 'win.restore' : 'win.maximize')}
         onClick={run('toggle')}
       >
         <Icon name={maximized ? 'winRestore' : 'winMaximize'} />
@@ -96,7 +99,7 @@ function WindowControls({
       <button
         type="button"
         className="wincontrols__btn wincontrols__btn--close"
-        title="닫기"
+        title={say('win.close')}
         onClick={run('close')}
       >
         <Icon name="close" />

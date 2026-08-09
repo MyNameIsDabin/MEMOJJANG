@@ -1,5 +1,6 @@
 /** 클립보드 읽기/쓰기. Tauri 안에서는 플러그인을, 브라우저에서는 웹 API 를 쓴다. */
 import { isTauri } from './env'
+import { t } from '../i18n'
 
 export async function copyText(text: string): Promise<void> {
   if (isTauri()) {
@@ -34,6 +35,6 @@ async function transcodeToPng(blob: Blob): Promise<Blob> {
   canvas.getContext('2d')?.drawImage(bitmap, 0, 0)
   bitmap.close()
   return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('png 변환 실패'))), 'image/png'),
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(t('err.pngConvert')))), 'image/png'),
   )
 }

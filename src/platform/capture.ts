@@ -4,6 +4,7 @@
  *  자르는 일은 여기서 한다 — 이미 브라우저에 그림이 올라와 있어 한 번 더 오갈 이유가 없다. */
 import { isTauri } from './env'
 import { base64ToBlob } from '../utils/bytes'
+import { t } from '../i18n'
 
 export interface Shot {
   /** 고를 때 화면에 깔아 두는 미리보기. 오려 내기는 Rust 가 원본에서 한다. */
@@ -20,7 +21,7 @@ async function call<T>(command: string, args: Record<string, unknown>): Promise<
 
 /** 창을 숨겨 찍고, 그 그림을 덮어 그릴 수 있도록 창을 화면 전체로 넓힌다. */
 export async function beginCapture(): Promise<Shot> {
-  if (!isTauri()) throw new Error('앱에서만 화면을 캡처할 수 있습니다.')
+  if (!isTauri()) throw new Error(t('err.appOnlyCapture'))
   const shot = await call<{ preview: string; width: number; height: number }>('begin_capture', {})
   return {
     url: URL.createObjectURL(base64ToBlob(shot.preview, 'image/jpeg')),

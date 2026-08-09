@@ -16,6 +16,7 @@ import { copyText } from '../platform/clipboard'
 import { canvasImageUrl } from '../platform/canvasFile'
 import { saveImage } from '../platform/assets'
 import { describeError, notify } from '../ui/toast'
+import { plural, t } from '../i18n'
 
 const FORMAT = 'memojjang/notes@1'
 
@@ -60,9 +61,9 @@ export async function copyNotes(ids: string[]): Promise<void> {
 
   try {
     await copyText(JSON.stringify(clip))
-    notify(picked.length === 1 ? '메모지를 복사했습니다.' : `메모지 ${picked.length}장을 복사했습니다.`)
+    notify(plural(picked.length, 'toast.copiedNote', 'toast.copiedNotes'))
   } catch (err) {
-    notify(`복사하지 못했습니다 — ${describeError(err)}`, 'error')
+    notify(t('toast.copyFailed', { reason: describeError(err) }), 'error')
   }
 }
 

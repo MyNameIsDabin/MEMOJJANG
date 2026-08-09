@@ -1,6 +1,6 @@
 [package]
 name = "memojjang"
-version = "0.2.0"
+version = "0.2.1"
 description = "고전 픽셀 감성의 메모·할 일·바로가기 보드"
 authors = ["Memojjang contributors"]
 edition = "2021"
