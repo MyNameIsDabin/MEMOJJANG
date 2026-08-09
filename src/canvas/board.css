@@ -70,6 +70,15 @@
   box-shadow: 3px 3px 0 var(--shadow);
 }
 
+/* 격자에 붙일 자리. 끄는 동안 "손을 떼면 여기" 를 알려 준다. */
+.board__ghost {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border: 2px dashed var(--sel);
+  background: color-mix(in srgb, var(--sel) 10%, transparent);
+}
+
 .board__marquee {
   position: fixed;
   pointer-events: none;

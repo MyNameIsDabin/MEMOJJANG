@@ -35,8 +35,6 @@ serde_json = "1"
 # 클립보드 감시 스레드에서 직접 읽기 위해 (프론트로 왕복하면 큰 이미지가 IPC 를 막는다)
 arboard = "3"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
-# 캡처 직전 창이 걷힐 때까지 한 박자 기다리는 데 쓴다 (capture.rs)
-tokio = { version = "1", features = ["time"] }
 
 [target.'cfg(windows)'.dependencies]
 # GetClipboardSequenceNumber — 클립보드를 열지 않고 변경 여부만 싸게 확인한다

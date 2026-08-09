@@ -53,6 +53,18 @@ export interface MemoNote extends NoteBase {
   view?: MemoView
 }
 
+/** 그림 위에 덧그린 획 하나.
+ *
+ *  좌표는 **원본 그림의 픽셀** 기준이다. 노트를 늘리거나 캔버스를 확대해도 그림과 함께
+ *  자연스럽게 따라가고, 원본 파일은 손대지 않으므로 언제든 되돌릴 수 있다. */
+export interface Stroke {
+  color: string
+  /** 선 굵기 — 원본 픽셀 기준 */
+  width: number
+  /** [x0, y0, x1, y1, …] */
+  points: number[]
+}
+
 /** 붙여넣은 그림 한 장. 바이트는 캔버스 파일에 넣지 않고 옆 폴더에 두고 이름만 적는다. */
 export interface ImageNote extends NoteBase {
   kind: 'image'
@@ -60,7 +72,14 @@ export interface ImageNote extends NoteBase {
   file: string
   naturalW: number
   naturalH: number
+  /** 연필로 덧그린 것. 없으면 아무것도 안 그린 것. */
+  strokes?: Stroke[]
 }
+
+/** 연필 색. 어떤 그림 위에서도 하나쯤은 보이도록 골랐다. */
+export const PEN_COLORS = ['#ff4d4f', '#ffd75e', '#4dd07a', '#5aa9ff', '#ffffff', '#141414']
+/** 연필 굵기(원본 픽셀). 그림 크기가 제각각이라 실제로는 여기에 비율을 곱해 쓴다. */
+export const PEN_SIZES = [0.004, 0.008, 0.016]
 
 /** 바로가기 하나. 별칭을 비워 두면 화면에는 주소의 호스트가 대신 나온다. */
 export interface LinkItem {

@@ -10,6 +10,7 @@ import { StickerPicker } from '../ui/StickerPicker'
 import { StickerLayer } from './StickerLayer'
 import { StickerHandles } from './StickerHandles'
 import { StickerLinks } from './StickerLinks'
+import { useSnapGhost } from './snapGhost'
 import { useUi } from '../store/uiStore'
 import { handleDrop, shouldHandleDrop } from '../actions/drop'
 import { lastPointer } from './pointer'
@@ -260,11 +261,15 @@ export function Board() {
     [decorating],
   )
 
+  /* radial-gradient 는 타일 **한가운데**에 점을 찍는다. 그대로 두면 점이 월드 좌표
+     12, 36, 60… 에 놓이는데 스냅은 0, 24, 48… 로 붙으므로 점과 노트가 반 칸씩 어긋난다.
+     타일을 반 칸 당겨 점이 스냅 자리에 정확히 오도록 맞춘다. */
+  const cell = GRID_SIZE * viewport.zoom
   const gridStyle = showGrid
     ? {
         backgroundImage: 'radial-gradient(circle, var(--canvas-dot) 1px, transparent 1px)',
-        backgroundSize: `${GRID_SIZE * viewport.zoom}px ${GRID_SIZE * viewport.zoom}px`,
-        backgroundPosition: `${viewport.x}px ${viewport.y}px`,
+        backgroundSize: `${cell}px ${cell}px`,
+        backgroundPosition: `${viewport.x - cell / 2}px ${viewport.y - cell / 2}px`,
       }
     : undefined
 
@@ -293,6 +298,8 @@ export function Board() {
         }}
       >
         <StickerLayer layer="behind" />
+
+        <SnapGhosts />
 
         {noteIds.map((id) => (
           <NoteShell key={id} id={id} />
@@ -332,5 +339,22 @@ export function Board() {
         />
       )}
     </div>
+  )
+}
+
+/** 격자에 붙일 자리를 미리 보여 주는 실루엣. 끄는 동안에만 나타난다. */
+function SnapGhosts() {
+  const ghosts = useSnapGhost((s) => s.ghosts)
+  if (!ghosts.length) return null
+  return (
+    <>
+      {ghosts.map((g, i) => (
+        <div
+          key={i}
+          className="board__ghost"
+          style={{ left: g.x, top: g.y, width: g.w, height: g.h }}
+        />
+      ))}
+    </>
   )
 }

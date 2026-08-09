@@ -791,6 +791,7 @@
 }
 
 .imagenote__frame {
+  position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
@@ -798,6 +799,21 @@
   overflow: hidden;
   background: var(--face-2);
   border-top: 2px solid var(--bevel-dark);
+}
+
+/* 덧그린 획. 그림과 같은 자리에 겹쳐 놓되, 연필을 켜기 전에는 잡히지 않는다. */
+.imagenote__ink {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.imagenote__ink--on {
+  pointer-events: auto;
+  cursor: crosshair;
 }
 
 .imagenote__frame img {
@@ -843,6 +859,61 @@
 .imagenote__act:hover:not(:disabled) {
   color: var(--text);
   text-decoration: underline;
+}
+
+.imagenote__act[aria-pressed='true'] {
+  color: var(--text);
+  background: var(--chrome-press);
+}
+
+.imagenote__gap {
+  flex: 1 1 auto;
+}
+
+/* ── 연필 ─────────────────────────────────────────────────────────── */
+
+/* 연필을 켰을 때만 나온다. 평소에는 정보줄이 조용해야 한다. */
+.pen {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.pen__color {
+  width: calc(var(--ui-size) * 1.1);
+  height: calc(var(--ui-size) * 1.1);
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.pen__color--on {
+  border-color: var(--sel);
+}
+
+.pen__size {
+  display: grid;
+  place-items: center;
+  width: calc(var(--ui-size) * 1.4);
+  height: calc(var(--ui-size) * 1.1);
+  padding: 0;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.pen__size--on {
+  border-color: var(--sel);
+}
+
+.pen__size span {
+  display: block;
+  background: var(--text);
+  border-radius: 50%;
 }
 
 .imagenote__act:disabled {

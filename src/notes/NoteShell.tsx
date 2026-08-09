@@ -1,10 +1,11 @@
 /** 모든 노트가 공유하는 껍데기 — 제목 표시줄, 드래그, 크기 조절, 접기, 삭제.
  *  본문만 종류별로 갈아 끼운다. */
 import { useCallback, useRef } from 'react'
-import { ACCENTS, MIN_NOTE_W, type Note } from '../types'
+import { ACCENTS, MIN_NOTE_H, MIN_NOTE_W, type Note } from '../types'
 import { imageChromeHeight, useBoard } from '../store/boardStore'
 import { useUi } from '../store/uiStore'
 import { GRID_SIZE, useSettings } from '../store/settingsStore'
+import { snapTo, useSnapGhost } from '../canvas/snapGhost'
 import { TodoBody } from './TodoBody'
 import { MemoBody } from './MemoBody'
 import { ImageBody } from './ImageBody'
@@ -22,6 +23,18 @@ const KIND_LABEL: Record<Note['kind'], string> = {
 
 /** 드래그로 볼지 클릭으로 볼지 가르는 문턱(화면 픽셀). */
 const DRAG_SLOP = 3
+
+/** 격자에 맞춘 크기.
+ *
+ *  그림 노트는 너비만 격자에 붙이고 높이는 원본 비율에서 따라 나오게 둔다.
+ *  둘 다 붙이면 비율이 깨져 그림이 찌그러지는데, 그건 격자에 맞는 것보다 훨씬 눈에 띈다. */
+function snapSize(note: Note): { w: number; h: number } {
+  const w = Math.max(MIN_NOTE_W, snapTo(note.w, GRID_SIZE))
+  if (note.kind === 'image' && note.naturalW && note.naturalH) {
+    return { w, h: Math.round((w * note.naturalH) / note.naturalW) + imageChromeHeight() }
+  }
+  return { w, h: Math.max(MIN_NOTE_H, snapTo(note.h, GRID_SIZE)) }
+}
 
 interface DragState {
   pointerId: number
@@ -140,6 +153,23 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
     useBoard.getState().moveNotes(drag.ids, (e.clientX - drag.lastX) / zoom, (e.clientY - drag.lastY) / zoom)
     drag.lastX = e.clientX
     drag.lastY = e.clientY
+
+    // 어디에 놓일지 미리 보여 준다. 스냅은 손을 뗄 때 일어나므로 이게 없으면 떼어 봐야 안다.
+    if (useSettings.getState().snapToGrid) {
+      const { notes } = useBoard.getState()
+      useSnapGhost.getState().show(
+        drag.ids
+          .map((nid) => notes[nid])
+          .filter(Boolean)
+          .map((n) => ({
+            x: snapTo(n.x, GRID_SIZE),
+            y: snapTo(n.y, GRID_SIZE),
+            w: n.w,
+            h: n.collapsed ? 0 : n.h,
+          }))
+          .filter((g) => g.h > 0),
+      )
+    }
   }, [])
 
   const endDrag = useCallback(
@@ -147,6 +177,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
       const drag = dragRef.current
       if (!drag || drag.pointerId !== e.pointerId) return
       dragRef.current = null
+      useSnapGhost.getState().hide()
 
       if (e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId)
@@ -158,10 +189,7 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
         for (const nid of drag.ids) {
           const n = notes[nid]
           if (!n) continue
-          patchNote(nid, {
-            x: Math.round(n.x / GRID_SIZE) * GRID_SIZE,
-            y: Math.round(n.y / GRID_SIZE) * GRID_SIZE,
-          })
+          patchNote(nid, { x: snapTo(n.x, GRID_SIZE), y: snapTo(n.y, GRID_SIZE) })
         }
       }
     },
@@ -217,15 +245,34 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
       }
 
       useBoard.getState().resizeNote(id, width, height)
+
+      // 크기도 격자에 붙는다. 어느 크기가 될지 미리 보여 준다.
+      if (useSettings.getState().snapToGrid) {
+        const n = useBoard.getState().notes[id]
+        if (n) {
+          const fitted = snapSize(n)
+          useSnapGhost.getState().show([{ x: n.x, y: n.y, w: fitted.w, h: fitted.h }])
+        }
+      }
     },
     [id, note],
   )
 
-  const endResize = useCallback((e: React.PointerEvent) => {
-    if (resizeRef.current?.pointerId !== e.pointerId) return
-    resizeRef.current = null
-    ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
-  }, [])
+  const endResize = useCallback(
+    (e: React.PointerEvent) => {
+      if (resizeRef.current?.pointerId !== e.pointerId) return
+      resizeRef.current = null
+      useSnapGhost.getState().hide()
+      ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+
+      if (!snapToGrid) return
+      const n = useBoard.getState().notes[id]
+      if (!n) return
+      const fitted = snapSize(n)
+      useBoard.getState().resizeNote(id, fitted.w, fitted.h)
+    },
+    [id, snapToGrid],
+  )
 
   if (!note) return null
 

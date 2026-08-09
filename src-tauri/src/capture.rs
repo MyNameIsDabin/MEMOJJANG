@@ -5,7 +5,8 @@
 //! 고르는 동안 화면이 계속 움직여 무엇을 잡는 중인지 알기 어렵고, 어둡게 깐 막까지
 //! 사진에 함께 찍힐 위험이 있다.
 //!
-//! 우리 창은 찍기 **전에** 숨긴다. 안 그러면 메모짱이 사진 한가운데 들어앉는다.
+//! 메모짱 창은 숨기지 않는다. 잠깐 사라졌다 나타나면 눈에 거슬리고, 메모짱까지 담고 싶을
+//! 때도 있기 때문이다. 대신 얼린 그림에 메모짱이 그대로 들어 있으니 원하면 그 자리도 담을 수 있다.
 //!
 //! 찍은 원본은 여기 그대로 들고 있고 화면에는 JPEG 미리보기만 건넨다. 모니터 두 대를
 //! 아우르면 800만 화소가 넘는데, 그걸 무손실로 만들어 IPC 로 넘기면 몇 초가 걸린다.
@@ -142,9 +143,9 @@ fn encode(bytes: &[u8], width: u32, height: u32, format: image::ImageFormat) -> 
     Ok(out.into_inner())
 }
 
-/// 창을 숨기고 화면을 찍은 뒤, 그 그림을 덮어 그릴 수 있도록 창을 가상 화면 전체로 넓힌다.
+/// 화면을 찍어 얼려 두고, 그 그림을 덮어 그릴 수 있도록 창을 가상 화면 전체로 넓힌다.
 #[tauri::command]
-pub async fn begin_capture(window: tauri::Window) -> Result<Shot, String> {
+pub fn begin_capture(window: tauri::Window) -> Result<Shot, String> {
     // set_size 는 **안쪽** 크기를 정하므로 잴 때도 안쪽으로 재야 한다.
     // 바깥 크기를 재어 두고 그대로 되돌리면 테두리만큼 창이 조금씩 커진다.
     let previous = (
@@ -156,13 +157,8 @@ pub async fn begin_capture(window: tauri::Window) -> Result<Shot, String> {
     let restore = |window: &tauri::Window| {
         let _ = window.set_position(previous.0);
         let _ = window.set_size(previous.1);
-        let _ = window.show();
         let _ = window.set_focus();
     };
-
-    let _ = window.hide();
-    // 창이 실제로 화면에서 걷힐 때까지 한 박자 기다린다. 바로 찍으면 잔상이 남는다.
-    tokio::time::sleep(std::time::Duration::from_millis(140)).await;
 
     let (x, y, width, height) = win::virtual_screen();
     let bytes = match win::grab(x, y, width, height) {
@@ -187,7 +183,6 @@ pub async fn begin_capture(window: tauri::Window) -> Result<Shot, String> {
     let _ = window.set_always_on_top(true);
     let _ = window.set_position(PhysicalPosition::new(x, y));
     let _ = window.set_size(PhysicalSize::new(width as u32, height as u32));
-    let _ = window.show();
     let _ = window.set_focus();
 
     Ok(Shot {
@@ -237,7 +232,6 @@ pub fn end_capture(window: tauri::Window, always_on_top: bool) -> Result<(), Str
     }
     // 캡처 때문에 잠시 올려 뒀던 것을 사용자가 정해 둔 값으로 되돌린다.
     let _ = window.set_always_on_top(always_on_top);
-    let _ = window.show();
     let _ = window.set_focus();
     Ok(())
 }
