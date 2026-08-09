@@ -1,9 +1,10 @@
 /** 설정 창. 고전 대화상자처럼 생겼고, 값은 바꾸는 즉시 반영·저장된다(확인 버튼 없음). */
 import { useEffect, useState } from 'react'
-import { FONT_OPTIONS, SCALE_OPTIONS, useSettings, type Settings } from '../store/settingsStore'
+import { SCALE_OPTIONS, fontOptions, useSettings, type Settings } from '../store/settingsStore'
 import { THEME_OPTIONS } from '../theme/palette'
 import { ThemeEditor } from './ThemeEditor'
 import { MemoRules } from './MemoRules'
+import { FontManager } from './FontManager'
 import { UpdateSection } from './UpdateSection'
 import { useCanvases } from '../store/canvasStore'
 import { storage } from '../platform/storage'
@@ -17,6 +18,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const activeCanvas = useCanvases((st) => st.canvases.find((c) => c.id === st.activeId) ?? null)
   const [editingColors, setEditingColors] = useState(false)
   const [editingRules, setEditingRules] = useState(false)
+  const [addingFont, setAddingFont] = useState(false)
+  const fonts = fontOptions(s.userFonts)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -49,7 +52,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               기본은 고전 픽셀 글꼴 <b>갈무리11</b>입니다. 픽셀 글꼴은 정수 배율에서 가장 또렷합니다.
             </p>
             <div className="settings__fonts">
-              {FONT_OPTIONS.map((f) => (
+              {fonts.map((f) => (
                 <label key={f.key} className={`fontcard${s.font === f.key ? ' fontcard--on' : ''}`}>
                   <input
                     type="radio"
@@ -66,6 +69,13 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 </label>
               ))}
             </div>
+            <div className="settings__actions">
+              <button className="btn" aria-pressed={addingFont} onClick={() => setAddingFont((v) => !v)}>
+                ＋ 글꼴 더하기
+              </button>
+            </div>
+            {addingFont && <FontManager />}
+
             <Row label="글자 크기">
               <Segmented
                 value={s.fontScale}
@@ -73,6 +83,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 onChange={(v) => set('fontScale', v)}
               />
             </Row>
+            <p className="settings__note">
+              도트 글꼴은 100% · 200% · 300% 처럼 정수 배에서 가장 또렷합니다. 사이 값은 조금 뭉개집니다.
+            </p>
           </Section>
 
           <Section title="테마">
@@ -198,11 +211,11 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                   ['Ctrl+1 / 2 / 3', '할 일 · 메모 · 바로가기 추가'],
                   ['Ctrl+V', '커서 자리에 붙여넣기 (그림은 그림 노트로)'],
                   ['Ctrl+F', '보드 안에서 찾기 (다시 누르면 닫힘)'],
+                  ['Ctrl+Space', '노트 목록 펼치기 — ↑↓ · Tab 으로 고르고 Enter'],
                   ['F2', '고른 노트의 이름 바꾸기'],
                   ['Esc', '화면 가득 펼친 노트 접기 · 열린 패널 닫기'],
-                  ['휠', '위아래로 밀기 (스크롤 되는 노트 위에서는 그 안을)'],
-                  ['Shift+휠', '좌우로 밀기'],
                   ['Ctrl+휠', '커서 기준 확대·축소'],
+                  ['휠', '스크롤 되는 노트 위에서만 — 그 안을 굴립니다'],
                   ['휠 클릭 드래그', '어디서든 캔버스 이동'],
                   ['빈 곳 드래그', '캔버스 이동'],
                   ['Shift+드래그', '여러 개 선택'],

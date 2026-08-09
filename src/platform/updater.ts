@@ -40,7 +40,7 @@ export async function currentVersion(): Promise<string> {
 function friendly(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err)
   // 릴리스가 아직 없거나 초안이라 latest.json 이 잡히지 않을 때
-  if (/release JSON|404|not found/i.test(raw)) return '아직 올라온 판올림이 없습니다.'
+  if (/release JSON|404|not found/i.test(raw)) return '아직 올라온 새 버전이 없습니다.'
   if (/network|dns|connect|timed? out|sending request/i.test(raw)) return '인터넷에 닿지 못했습니다.'
   return raw
 }

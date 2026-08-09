@@ -36,6 +36,13 @@ export function useShortcuts(): void {
         return
       }
 
+      // 노트 목록도 마찬가지. Shift 가 붙으면 전역 단축키(기본 Ctrl+Shift+Space)이므로 비켜준다.
+      if (mod && !e.shiftKey && (e.code === 'Space' || e.key === ' ')) {
+        e.preventDefault()
+        useUi.getState().toggleNoteList()
+        return
+      }
+
       // 이름 바꾸기. 글자를 치는 중에도 받는다 — 본문을 쓰다 제목을 고치는 일이 흔하다.
       // 여러 개를 골라 뒀으면 어느 것인지 알 수 없으므로 가만히 둔다.
       if (e.key === 'F2' && board.selection.length === 1) {

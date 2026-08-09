@@ -118,9 +118,19 @@
   background: var(--chrome-hover);
 }
 
+/* 화살표·Tab 으로 짚고 있는 줄 */
 .notelist__item--on {
   background: var(--sel);
   color: var(--accent-ink);
+}
+
+/* 지금 보고 있는 노트. 짚은 줄과 겹칠 수 있어 배경 대신 왼쪽 표시로 구분한다. */
+.notelist__item--cur {
+  box-shadow: inset 3px 0 0 var(--sel);
+}
+
+.notelist__item--cur.notelist__item--on {
+  box-shadow: inset 3px 0 0 var(--accent-ink);
 }
 
 .notelist__kind {
@@ -150,6 +160,10 @@
 .notelist__item--on .notelist__sub,
 .notelist__item--on .notelist__kind {
   color: inherit;
+}
+
+.notelist__item--on:hover {
+  background: var(--sel);
 }
 
 .notelist__empty {

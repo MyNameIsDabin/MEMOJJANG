@@ -27,7 +27,10 @@ export function NoteListMenu({ onClose }: { onClose: () => void }) {
   const fullscreenId = useUi((s) => s.fullscreenNoteId)
 
   const [query, setQuery] = useState('')
+  /** 화살표·Tab 으로 짚고 있는 줄. 목록은 위로 쌓이므로 0 은 검색칸 바로 위다. */
+  const [active, setActive] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
+  const itemsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
@@ -60,27 +63,67 @@ export function NoteListMenu({ onClose }: { onClose: () => void }) {
     return all.filter((n) => n.title.toLowerCase().includes(needle))
   }, [noteIds, notes, query])
 
+  /* 짚어 둔 줄은 맨 아래에서 시작한다 — 손이 있는 검색칸에 가장 가까운 줄이다.
+     검색어가 바뀌면 걸린 것이 통째로 달라지므로 다시 아래부터. */
+  useEffect(() => {
+    setActive(Math.max(0, rows.length - 1))
+  }, [query, rows.length])
+
+  // 짚은 줄이 목록 밖으로 나가면 따라 스크롤한다.
+  useEffect(() => {
+    itemsRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' })
+  }, [active, rows.length])
+
   const go = (id: string) => {
     focusNote(id)
     onClose()
   }
 
+  /* 화살표는 화면에서 보이는 방향 그대로 움직인다. Tab 은 ↓, Shift+Tab 은 ↑ 와 같다.
+     양끝에서는 돌아 나오므로 어느 쪽으로 눌러도 목록 전체에 닿는다.
+     Tab 의 기본 동작은 막아야 한다 — 안 그러면 포커스가 목록 밖으로 새어 나간다. */
+  const step = (delta: number) => {
+    if (!rows.length) return
+    setActive((at) => (at + delta + rows.length) % rows.length)
+  }
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+      e.preventDefault()
+      step(-1)
+    } else if (e.key === 'ArrowDown' || e.key === 'Tab') {
+      e.preventDefault()
+      step(1)
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      const row = rows[active]
+      if (row) go(row.id)
+    }
+  }
+
   return (
     <div className="notelist bevel-out" ref={ref} role="dialog" aria-label="노트 목록">
-      <div className="notelist__items">
+      <div className="notelist__items" ref={itemsRef}>
         {rows.length === 0 && (
           <p className="notelist__empty">
             {query.trim() ? '그런 이름의 노트가 없습니다.' : '아직 노트가 없습니다.'}
           </p>
         )}
-        {rows.map((note) => (
+        {rows.map((note, i) => (
           <button
             key={note.id}
             type="button"
-            className={`notelist__item${
-              note.id === (fullscreenId ?? selection[0]) ? ' notelist__item--on' : ''
-            }`}
+            data-active={i === active}
+            // 지금 짚은 줄과, 지금 보고 있는 노트는 다른 뜻이라 표시도 따로 준다.
+            className={[
+              'notelist__item',
+              i === active ? 'notelist__item--on' : '',
+              note.id === (fullscreenId ?? selection[0]) ? 'notelist__item--cur' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={() => go(note.id)}
+            onMouseEnter={() => setActive(i)}
           >
             <span className="notelist__kind">{KIND_LABEL[note.kind]}</span>
             <span className="notelist__title">{note.title}</span>
@@ -98,13 +141,7 @@ export function NoteListMenu({ onClose }: { onClose: () => void }) {
           placeholder="노트 이름으로 찾기…"
           spellCheck={false}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            // 걸린 게 하나면 Enter 로 바로 간다. 목록을 눈으로 훑을 필요가 없다.
-            if (e.key === 'Enter' && rows.length) {
-              e.preventDefault()
-              go(rows[0].id)
-            }
-          }}
+          onKeyDown={onKeyDown}
         />
         <span className="notelist__count">{rows.length}개</span>
       </div>

@@ -65,7 +65,89 @@
   margin-top: 9px;
 }
 
-/* ── 판올림 ────────────────────────────────────────────────────────── */
+/* ── 글꼴 더하기 ───────────────────────────────────────────────────── */
+
+.fontadd {
+  margin-top: 9px;
+  padding: 8px 10px;
+  background: var(--face-2);
+}
+
+.fontadd__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+
+.fontadd__row:first-child {
+  margin-top: 0;
+}
+
+.fontadd__field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-dim);
+}
+
+.fontadd__field input {
+  width: 4.5em;
+  padding: 2px 4px;
+  background: var(--face);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  border-radius: 0;
+  outline: none;
+  font: inherit;
+}
+
+.fontadd__name {
+  flex: 1 1 12em;
+  min-width: 0;
+  padding: 2px 4px;
+  background: var(--face);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  border-radius: 0;
+  outline: none;
+  font: inherit;
+}
+
+.fontadd__list {
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 3px;
+}
+
+.fontadd__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  background: var(--face);
+  border: 1px solid var(--line);
+}
+
+.fontadd__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fontadd__meta {
+  flex: 0 0 auto;
+  color: var(--text-dim);
+}
+
+/* ── 새로운 버전 ───────────────────────────────────────────────────── */
 
 /* 평소에는 다른 칸과 똑같이 조용히 있다가, 새 판이 있을 때만 눈에 들어온다. */
 .update--new {
@@ -234,10 +316,18 @@
   line-height: 1.5;
 }
 
+/* 다른 것들과 한 줄에 나란히 설 때 — 위아래 여백을 덜어 준다. */
+.check--inline {
+  align-items: center;
+  padding: 0;
+}
+
 /* ── 세그먼트 버튼 ─────────────────────────────────────────────────── */
 
+/* 글자 크기 칸이 일곱이라 좁은 창에서는 줄을 바꿔야 한다. */
 .segmented {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 3px;
 }
 

@@ -39,7 +39,7 @@ export function UpdateSection() {
   // 설정을 열 때 한 번. 사용자가 따로 누르지 않아도 알게 하려는 것이므로 조용히 돈다.
   useEffect(() => {
     if (!isTauri()) {
-      setPhase({ at: 'failed', why: '브라우저에서는 판올림을 확인할 수 없습니다.' })
+      setPhase({ at: 'failed', why: '브라우저에서는 새 버전을 확인할 수 없습니다.' })
       return
     }
     void check()
@@ -59,7 +59,7 @@ export function UpdateSection() {
     } catch (err) {
       const why = err instanceof Error ? err.message : String(err)
       setPhase({ at: 'found', info })
-      notify(`판올림에 실패했습니다: ${why}`)
+      notify(`새 버전을 설치하지 못했습니다: ${why}`)
     }
   }
 
@@ -67,16 +67,16 @@ export function UpdateSection() {
 
   return (
     <section className={`settings__section update${isNew ? ' update--new' : ''}`}>
-      <h2 className="settings__title">판올림</h2>
+      <h2 className="settings__title">새로운 버전</h2>
 
       <div className="update__row">
         <span className="update__now">
-          지금 쓰는 판 <b>{version || '…'}</b>
+          지금 버전 <b>{version || '…'}</b>
         </span>
 
         {phase.at === 'found' && (
           <button className="btn update__go" onClick={() => void install(phase.info)}>
-            <Icon name="download" /> {phase.info.version} 로 판올림
+            <Icon name="download" /> {phase.info.version} 설치하기
           </button>
         )}
 
@@ -95,7 +95,7 @@ export function UpdateSection() {
         <>
           <p className="settings__note">
             <b>{phase.info.version}</b> 이 나왔습니다
-            {phase.info.date ? ` (${phase.info.date.slice(0, 10)})` : ''}. 누르면 받아서 깔고 다시 띄웁니다.
+            {phase.info.date ? ` (${phase.info.date.slice(0, 10)})` : ''}. 누르면 받아서 깔고 앱을 다시 띄웁니다.
           </p>
           {phase.info.notes && <pre className="update__notes">{phase.info.notes}</pre>}
         </>

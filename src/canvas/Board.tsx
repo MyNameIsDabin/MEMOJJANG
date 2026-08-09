@@ -113,18 +113,16 @@ export function Board() {
         return
       }
 
-      // 내용이 넘쳐 스크롤이 생긴 노트 위에서는 그 안을 굴리는 게 먼저다.
+      // 내용이 넘쳐 스크롤이 생긴 노트 위에서는 그 안을 굴린다.
       // 여기서 preventDefault 를 하지 않고 빠지면 브라우저가 알아서 그 칸을 굴린다
       // (Shift 를 누른 채면 브라우저가 좌우로 굴려 준다).
       if (canScrollHere(e.target, e.shiftKey ? 'x' : 'y', e.deltaY, el)) return
 
+      /* 그 밖의 휠은 아무 일도 하지 않는다.
+         화면을 미는 데까지 휠을 쓰면, 노트를 끝까지 굴린 순간 그 아래 캔버스가 딸려 움직인다.
+         읽던 자리를 잃는 건 배율이 튀는 것과 다를 바 없어서, 화면 옮기기는 손으로 끄는 쪽에만 맡긴다
+         — 휠 클릭 드래그, 또는 빈 곳 드래그. */
       e.preventDefault()
-      // 남은 휠은 전부 화면을 미는 데 쓴다. deltaX 는 가로 휠·터치패드에서 들어온다.
-      useBoard.getState().setViewport((vp) =>
-        e.shiftKey
-          ? { ...vp, x: vp.x - e.deltaY - e.deltaX }
-          : { ...vp, x: vp.x - e.deltaX, y: vp.y - e.deltaY },
-      )
     }
 
     // 가운데 버튼을 누르면 Chromium 이 자동 스크롤 모드로 들어가면서 뒤따르는 마우스 이동을
