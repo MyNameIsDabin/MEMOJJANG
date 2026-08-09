@@ -102,6 +102,15 @@ export interface StickerAsset {
   naturalH: number
 }
 
+/** 스티커를 어느 켜에 그릴지.
+ *  - `behind` — 노트 뒤, 캔버스 위. 붙어 있지 않은 스티커의 자리.
+ *  - `body`   — 노트 **안쪽**. 종이의 무늬처럼 본문 밑에 깔린다. 노트에 붙어 있어야 뜻이 있다.
+ *  - `front`  — 노트 위. 노트에 붙이면 여기서 시작한다. */
+export type StickerLayer = 'behind' | 'body' | 'front'
+
+/** 스티커를 오려 내는 틀. */
+export type StickerMask = 'none' | 'circle' | 'star'
+
 /** 캔버스 위에 붙여 놓은 스티커 한 장. */
 export interface Sticker {
   id: string
@@ -116,9 +125,36 @@ export interface Sticker {
   scale: number
   /** 시계 방향 각도(도) */
   rotation: number
-  /** 노트보다 앞에 그릴지. 노트에 붙이면 참이 기본값이다. */
-  front: boolean
+  layer: StickerLayer
+  /** 0.1 ~ 1 */
+  opacity: number
+  /** 색을 빼고 흑백으로 */
+  mono: boolean
+  mask: StickerMask
 }
+
+export const STICKER_MIN_OPACITY = 0.1
+
+/** 스티커 꾸러미 — 남에게 건네주는 파일 하나.
+ *
+ *  그림을 따로 딸려 보내면 받는 쪽에서 짝을 잃기 쉬우므로 **바이트까지 이 안에** 담는다.
+ *  base64 라 원본보다 1/3 쯤 커지지만, 파일 하나로 끝난다는 편함이 그보다 크다. */
+export interface StickerPack {
+  format: 'memojjang-stickers'
+  version: number
+  stickers: {
+    name: string
+    /** 예: image/png */
+    mime: string
+    /** base64 로 담은 그림 바이트 */
+    data: string
+    naturalW: number
+    naturalH: number
+  }[]
+}
+
+export const STICKER_PACK_VERSION = 1
+export const STICKER_PACK_EXT = 'mjsticker.json'
 
 /** 캔버스에 처음 놓을 때 긴 변의 길이(월드 단위). */
 export const STICKER_BASE_PX = 160

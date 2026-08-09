@@ -10,6 +10,7 @@
  */
 import { files, baseName } from './files'
 import { isTauri } from './env'
+import { base64ToBytes } from '../utils/bytes'
 import type { UserFont } from '../store/settingsStore'
 
 const DIR = 'fonts'
@@ -21,13 +22,6 @@ function safeFamily(name: string): string {
 
 async function fs() {
   return import('@tauri-apps/plugin-fs')
-}
-
-function decodeBase64(base64: string): Uint8Array {
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return bytes
 }
 
 /** 이미 등록해 둔 글꼴을 두 번 등록하지 않도록 기억해 둔다. */
@@ -75,7 +69,7 @@ export async function addFontFromFile(options: {
   const stem = safeFamily(name.replace(/\.[^.]+$/, ''))
   if (!stem) throw new Error('글꼴 이름을 알아낼 수 없습니다.')
 
-  const bytes = decodeBase64(base64)
+  const bytes = base64ToBytes(base64)
   // 먼저 글꼴로 읽히는지 확인한다. 안 되는 파일을 폴더에 남겨 둘 이유가 없다.
   const face = new FontFace(stem, bytes)
   await face.load()

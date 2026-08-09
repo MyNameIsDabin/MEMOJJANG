@@ -8,7 +8,7 @@
  *  그림이 몇 장만 들어가도 매번 수 MB 를 쓰게 된다. 옆에 떼어 두면 본문은 계속 가볍다.
  *  대신 파일을 옮길 때는 `.assets` 폴더도 함께 옮겨야 한다.
  */
-import { CANVAS_VERSION, newId, type CanvasDoc, type Note } from '../types'
+import { CANVAS_VERSION, newId, type CanvasDoc, type Note, type Sticker } from '../types'
 import { files, joinPath } from './files'
 import { base64ToBlob, bytesToBase64 } from '../utils/bytes'
 
@@ -48,7 +48,20 @@ export async function readCanvas(path: string): Promise<CanvasDoc | null> {
     name: doc.name ?? '',
     notes: doc.notes.map(upgradeNote).filter((n): n is Note => n !== null),
     viewport: doc.viewport ?? { x: 0, y: 0, zoom: 1 },
-    stickers: Array.isArray(doc.stickers) ? doc.stickers : [],
+    stickers: Array.isArray(doc.stickers) ? doc.stickers.map(upgradeSticker) : [],
+  }
+}
+
+/** 처음 스티커에는 앞/뒤 두 갈래(front)뿐이었다. 그 사이에 '본문 밑' 이 생겨 켜 이름으로 바뀌었다.
+ *  투명도·흑백·오려내기도 나중에 붙은 것이라 없으면 기본값으로 채운다. */
+function upgradeSticker(raw: unknown): Sticker {
+  const s = raw as Record<string, unknown>
+  return {
+    ...(s as unknown as Sticker),
+    layer: (s.layer as Sticker['layer']) ?? (s.front ? 'front' : 'behind'),
+    opacity: typeof s.opacity === 'number' ? s.opacity : 1,
+    mono: Boolean(s.mono),
+    mask: (s.mask as Sticker['mask']) ?? 'none',
   }
 }
 

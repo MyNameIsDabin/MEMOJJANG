@@ -17,6 +17,21 @@
   pointer-events: none;
 }
 
+/* 잠겼다는 것이 한눈에 보여야 한다. 색을 빼고 옅게 죽여 두면
+   스티커만 또렷하게 남아 지금 무엇을 만지는 중인지 저절로 드러난다.
+   노트 껍데기에만 걸어야 안쪽에 깔린 스티커까지 흑백이 되지 않는다. */
+.board--decorating .note__bar,
+.board--decorating .note__body {
+  filter: grayscale(1);
+  opacity: 0.45;
+  transition: opacity 120ms linear;
+}
+
+/* 캔버스 바닥도 한 꺼풀 눌러 준다 — 스티커가 놓일 자리라는 느낌을 준다. */
+.board--decorating {
+  background: color-mix(in srgb, var(--canvas) 88%, #808080);
+}
+
 /* 격자는 DOM 을 늘리지 않고 배경 이미지 한 장으로 그린다.
    background-position 을 팬 오프셋에 물려두면 무한히 이어지는 것처럼 보인다. */
 .board__grid {

@@ -97,46 +97,32 @@
   background: var(--sel);
 }
 
-/* ── 스티커 도구 단추 ─────────────────────────────────────────────── */
+/* ── 이어 붙이는 손잡이 ───────────────────────────────────────────── */
 
-.sttools {
+/* 스티커 왼쪽 아래에 붙는다. 여기서 노트로 끄는 몸짓이 곧 '붙인다' 는 뜻이라
+   나머지 손보기 단추와 달리 스티커 곁에 남아 있어야 한다. */
+.stlinker {
   position: absolute;
-  display: flex;
-  align-items: center;
-  background: var(--face);
-  box-shadow: 2px 2px 0 var(--shadow);
-  pointer-events: auto;
-}
-
-.sttools__btn {
   display: grid;
   place-items: center;
   padding: 0;
-  background: var(--face-2);
-  color: var(--text);
+  background: var(--face);
+  color: var(--sel);
   border-style: solid;
-  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  border-color: var(--sel);
   border-radius: 0;
-  cursor: pointer;
+  cursor: alias;
   touch-action: none;
+  pointer-events: auto;
 }
 
-.sttools__btn:hover {
-  background: var(--chrome-hover);
-}
-
-.sttools__btn[aria-pressed='true'] {
+.stlinker:hover {
   background: var(--sel);
   color: var(--accent-ink);
 }
 
-.sttools__btn--danger:hover {
-  background: var(--danger);
-  color: #fff;
-}
-
 /* 아이콘은 단추 크기를 따라간다 — 배율을 되돌린 단추 안에서 제 몫만큼만 차지하도록. */
-.sttools__btn .icon,
+.stlinker .icon,
 .sttarget .icon {
   width: 70%;
   height: 70%;

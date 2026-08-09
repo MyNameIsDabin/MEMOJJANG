@@ -23,6 +23,7 @@
 }
 
 .stpicker__pick {
+  position: relative;
   display: grid;
   place-items: center;
   width: 100%;
@@ -98,7 +99,30 @@
   font: inherit;
 }
 
-.stpicker__more {
-  width: 100%;
+.stpicker__foot {
+  display: flex;
+  gap: 4px;
   margin-top: 6px;
+}
+
+.stpicker__small {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 3px 4px;
+}
+
+/* 내보낼 것을 고르는 중 */
+.stpicker__pick--on {
+  border-color: var(--sel);
+  background: color-mix(in srgb, var(--sel) 22%, var(--face-2));
+}
+
+.stpicker__check {
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  padding: 0 2px;
+  background: var(--sel);
+  color: var(--accent-ink);
+  line-height: 1.1;
 }

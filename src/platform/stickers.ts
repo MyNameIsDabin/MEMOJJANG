@@ -6,10 +6,18 @@
  *
  *  담을 때 큰 그림은 줄인다. 원본을 그대로 두면 파일만 무거워지는데, 스티커는 화면에서
  *  기껏해야 몇백 px 로 그려지므로 그 이상은 쓸 일이 없다. */
-import { STICKER_MAX_BYTES, STICKER_MAX_PX, newId, type StickerAsset } from '../types'
+import {
+  STICKER_MAX_BYTES,
+  STICKER_MAX_PX,
+  STICKER_PACK_EXT,
+  STICKER_PACK_VERSION,
+  newId,
+  type StickerAsset,
+  type StickerPack,
+} from '../types'
 import { files, baseName } from './files'
 import { isTauri } from './env'
-import { base64ToBlob } from '../utils/bytes'
+import { base64ToBlob, base64ToBytes, bytesToBase64 } from '../utils/bytes'
 
 const DIR = 'stickers'
 
@@ -112,6 +120,98 @@ export async function addStickerAsset(name: string): Promise<StickerAsset | null
     naturalW: width,
     naturalH: height,
   }
+}
+
+/** 고른 스티커들을 꾸러미 파일 하나로 내보낸다. 저장을 취소하면 false. */
+export async function exportStickerPack(assets: StickerAsset[]): Promise<boolean> {
+  if (!isTauri()) throw new Error('앱에서만 내보낼 수 있습니다.')
+  if (!assets.length) throw new Error('내보낼 스티커를 골라 주세요.')
+
+  const { save } = await import('@tauri-apps/plugin-dialog')
+  const path = await save({
+    title: '스티커 꾸러미 내보내기',
+    defaultPath: `스티커 꾸러미.${STICKER_PACK_EXT}`,
+    filters: [{ name: '메모짱 스티커 꾸러미', extensions: [STICKER_PACK_EXT] }],
+  })
+  if (!path) return false
+
+  const { readFile, BaseDirectory } = await fs()
+  const packed: StickerPack['stickers'] = []
+
+  for (const asset of assets) {
+    const bytes = await readFile(`${DIR}/${asset.file}`, { baseDir: BaseDirectory.AppData }).catch(
+      () => null,
+    )
+    // 그림이 사라진 스티커는 담아 봐야 받는 쪽에서 못 쓴다. 조용히 건너뛴다.
+    if (!bytes) continue
+    packed.push({
+      name: asset.name,
+      mime: mimeFor(asset.file),
+      data: bytesToBase64(bytes),
+      naturalW: asset.naturalW,
+      naturalH: asset.naturalH,
+    })
+  }
+
+  if (!packed.length) throw new Error('담을 그림이 없습니다.')
+
+  const pack: StickerPack = {
+    format: 'memojjang-stickers',
+    version: STICKER_PACK_VERSION,
+    stickers: packed,
+  }
+  await files.writeText(path, JSON.stringify(pack))
+  return true
+}
+
+/** 꾸러미를 읽어 보관함에 더한다. 고르지 않고 닫으면 빈 배열. */
+export async function importStickerPack(): Promise<StickerAsset[]> {
+  if (!isTauri()) throw new Error('앱에서만 불러올 수 있습니다.')
+
+  const { open } = await import('@tauri-apps/plugin-dialog')
+  const picked = await open({
+    multiple: false,
+    filters: [{ name: '메모짱 스티커 꾸러미', extensions: [STICKER_PACK_EXT, 'json'] }],
+  })
+  if (typeof picked !== 'string') return []
+
+  const text = await files.readText(picked)
+  if (text === null) throw new Error('파일을 읽지 못했습니다.')
+
+  let pack: StickerPack
+  try {
+    pack = JSON.parse(text) as StickerPack
+  } catch {
+    throw new Error('스티커 꾸러미 파일이 아닙니다.')
+  }
+  if (pack?.format !== 'memojjang-stickers' || !Array.isArray(pack.stickers)) {
+    throw new Error('스티커 꾸러미 파일이 아닙니다.')
+  }
+
+  const { writeFile, mkdir, BaseDirectory } = await fs()
+  const opts = { baseDir: BaseDirectory.AppData }
+  await mkdir(DIR, { ...opts, recursive: true }).catch(() => {})
+
+  const added: StickerAsset[] = []
+  for (const item of pack.stickers) {
+    if (typeof item?.data !== 'string') continue
+    const bytes = base64ToBytes(item.data)
+    const ext = (item.mime ?? '').split('/')[1] || 'png'
+    // 파일 이름은 여기서 새로 짓는다. 남의 이름을 그대로 쓰면 이미 있던 것을 덮어쓴다.
+    const file = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+    await writeFile(`${DIR}/${file}`, bytes, opts)
+    urlCache.set(file, URL.createObjectURL(new Blob([bytes as BlobPart], { type: item.mime })))
+    added.push({
+      id: newId(),
+      name: (item.name ?? '').trim() || '스티커',
+      file,
+      naturalW: item.naturalW || 128,
+      naturalH: item.naturalH || 128,
+    })
+  }
+
+  if (!added.length) throw new Error('꾸러미 안에 쓸 수 있는 스티커가 없습니다.')
+  return added
 }
 
 export async function removeStickerAsset(asset: StickerAsset): Promise<void> {

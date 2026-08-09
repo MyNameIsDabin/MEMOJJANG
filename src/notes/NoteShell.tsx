@@ -9,6 +9,7 @@ import { TodoBody } from './TodoBody'
 import { MemoBody } from './MemoBody'
 import { ImageBody } from './ImageBody'
 import { LinkBody } from './LinkBody'
+import { NoteStickers } from '../canvas/StickerLayer'
 import { Icon } from '../ui/Icon'
 import './note.css'
 
@@ -52,6 +53,13 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
   const note = useBoard((s) => s.notes[id])
   const selected = useBoard((s) => s.selection.includes(id))
   const snapToGrid = useSettings((s) => s.snapToGrid)
+  // 안쪽에 깔린 스티커가 있으면 본문 바탕을 옅게 해 비쳐 보이게 한다.
+  const hasDeco = useBoard((s) =>
+    s.stickerIds.some((sid) => {
+      const st = s.stickers[sid]
+      return st?.noteId === id && st.layer === 'body'
+    }),
+  )
 
   const dragRef = useRef<DragState | null>(null)
   const resizeRef = useRef<ResizeState | null>(null)
@@ -239,9 +247,12 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
         selected && !expanded ? 'note--selected' : '',
         collapsed ? 'note--collapsed' : '',
         expanded ? 'note--expanded' : '',
+        hasDeco ? 'note--deco' : '',
       ]
         .filter(Boolean)
         .join(' ')}
+      // 단축키가 "커서가 어느 노트 안에 있는지" 를 되짚어 올라갈 때 쓴다.
+      data-note={id}
       style={
         expanded
           ? { ['--note-accent' as string]: `var(--accent-${note.accent})` }
@@ -344,6 +355,8 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
 
       {!collapsed && (
         <>
+          <NoteStickers noteId={id} />
+
           <div className="note__body">
             {note.kind === 'todo' && <TodoBody note={note} />}
             {note.kind === 'memo' && <MemoBody note={note} />}

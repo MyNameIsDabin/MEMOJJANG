@@ -72,6 +72,22 @@ export function useShortcuts(): void {
         return
       }
 
+      /* 화면 가득 펼치기 / 되돌리기. 이미 펼쳐져 있으면 접는다 — 같은 키로 여닫는 편이 손에 붙는다.
+         글자를 치는 중에도 받는다. 좁은 칸에서 쓰다가 답답해서 넓히는 일이 흔한데,
+         본문을 누르는 것만으로는 노트가 '골라지지' 않으므로(본문이 전파를 끊는다)
+         커서가 들어 있는 노트를 먼저 본다. 그러지 않으면 정작 넓히고 싶은 순간에 아무 일도 안 난다. */
+      if (mod && e.key === 'Enter') {
+        e.preventDefault()
+        if (ui.fullscreenNoteId) {
+          ui.collapseNote()
+          return
+        }
+        const here = (e.target as HTMLElement | null)?.closest?.('[data-note]')?.getAttribute('data-note')
+        const target = here ?? (board.selection.length === 1 ? board.selection[0] : null)
+        if (target) ui.expandNote(target)
+        return
+      }
+
       // 이름 바꾸기. 글자를 치는 중에도 받는다 — 본문을 쓰다 제목을 고치는 일이 흔하다.
       // 여러 개를 골라 뒀으면 어느 것인지 알 수 없으므로 가만히 둔다.
       if (e.key === 'F2' && board.selection.length === 1) {

@@ -193,6 +193,17 @@ input[type='text'] {
   outline-offset: -4px;
 }
 
+/* 눌리지 않는 단추는 그렇게 보여야 한다. 이게 없으면 멀쩡해 보이는 단추를
+   눌러 놓고 아무 일도 안 일어나 어리둥절해진다. */
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn:disabled:hover {
+  filter: none;
+}
+
 .btn--ghost {
   background: transparent;
   border-color: transparent;

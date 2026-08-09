@@ -11,7 +11,6 @@ import { useShallow } from 'zustand/react/shallow'
 import { STICKER_MAX_SCALE, STICKER_MIN_SCALE } from '../types'
 import { toWorld, useBoard, worldOf } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
-import { useUi } from '../store/uiStore'
 import { Icon } from '../ui/Icon'
 import { sizeOf } from './StickerLayer'
 
@@ -179,56 +178,28 @@ export function StickerHandles({ id }: { id: string }) {
         ))}
       </div>
 
-      {/* 도구 단추는 스티커와 함께 돌면 읽기 어려우므로 회전 밖에 따로 둔다. */}
-      <div
-        className="sttools"
+      {/* 이어 붙이는 손잡이만 스티커 곁에 남긴다 — 여기서 저기로 끄는 몸짓 자체가 뜻이라서다.
+          나머지 손보기는 화면 아래 도구 줄(StickerBar)이 맡는다. */}
+      <button
+        type="button"
+        className="stlinker"
+        title="메모 위에 연결해 붙일 수 있어요"
         style={{
           left: at.x - w / 2,
           top: at.y + h / 2,
-          gap: 4 * k,
-          padding: 4 * k,
-          transform: `translateY(${6 * k}px)`,
+          width: 26 * k,
+          height: 26 * k,
+          marginLeft: -13 * k,
+          marginTop: -13 * k,
+          borderWidth: Math.max(1, 2 * k),
         }}
+        onPointerDown={beginLink}
+        onPointerMove={onLinkMove}
+        onPointerUp={endLink}
+        onPointerCancel={endLink}
       >
-        <button
-          type="button"
-          className="sttools__btn"
-          title="메모 위에 연결해 붙일 수 있어요"
-          style={{ width: 24 * k, height: 24 * k, borderWidth: Math.max(1, 2 * k) }}
-          onPointerDown={beginLink}
-          onPointerMove={onLinkMove}
-          onPointerUp={endLink}
-          onPointerCancel={endLink}
-        >
-          <Icon name="link" />
-        </button>
-
-        <button
-          type="button"
-          className="sttools__btn"
-          aria-pressed={sticker.front}
-          title={sticker.front ? '지금은 메모 앞 — 누르면 뒤로' : '지금은 메모 뒤 — 누르면 앞으로'}
-          style={{ width: 24 * k, height: 24 * k, borderWidth: Math.max(1, 2 * k) }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => useBoard.getState().patchSticker(id, { front: !sticker.front })}
-        >
-          <Icon name="layers" />
-        </button>
-
-        <button
-          type="button"
-          className="sttools__btn sttools__btn--danger"
-          title="이 스티커를 떼어 냅니다"
-          style={{ width: 24 * k, height: 24 * k, borderWidth: Math.max(1, 2 * k) }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={() => {
-            useUi.getState().pickSticker(null)
-            useBoard.getState().removeSticker(id)
-          }}
-        >
-          <Icon name="trash" />
-        </button>
-      </div>
+        <Icon name="link" />
+      </button>
     </>
   )
 }

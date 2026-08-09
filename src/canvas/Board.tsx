@@ -292,13 +292,13 @@ export function Board() {
           transform: `translate3d(${viewport.x}px, ${viewport.y}px, 0) scale(${viewport.zoom})`,
         }}
       >
-        <StickerLayer front={false} />
+        <StickerLayer layer="behind" />
 
         {noteIds.map((id) => (
           <NoteShell key={id} id={id} />
         ))}
 
-        <StickerLayer front />
+        <StickerLayer layer="front" />
 
         {decorating && (
           <div className="stickers stickers--ui">

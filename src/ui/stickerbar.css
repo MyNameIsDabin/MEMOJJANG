@@ -1,0 +1,109 @@
+/* 꾸미기 안내 띠와 스티커 손보기 줄. 둘 다 화면에 붙어 있어 배율과 무관하다. */
+
+.decohint {
+  position: fixed;
+  top: var(--chrome-h, 60px);
+  left: 0;
+  right: 0;
+  z-index: 190;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 3px 8px;
+  background: var(--sel);
+  color: var(--accent-ink);
+  /* 안내일 뿐이므로 아래 캔버스를 가로막지 않는다. 단추만 눌린다. */
+  pointer-events: none;
+}
+
+.decohint__out {
+  padding: 0 6px;
+  background: transparent;
+  color: inherit;
+  border: 2px solid currentColor;
+  border-radius: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  font: inherit;
+}
+
+.decohint__out:hover {
+  background: color-mix(in srgb, var(--accent-ink) 18%, transparent);
+}
+
+/* ── 스티커 손보기 줄 ─────────────────────────────────────────────── */
+
+.stbar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--footer-h, 24px) + 8px);
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 16px);
+  flex-wrap: wrap;
+  padding: 5px 7px;
+  background: var(--face);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.stbar__group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.stbar__label {
+  color: var(--text-dim);
+  margin-right: 2px;
+}
+
+.stbar__btn {
+  padding: 1px 6px;
+}
+
+/* 여기서는 눌린 상태가 곧 '지금 이 스티커가 어떤 상태인가' 라는 정보다.
+   기본 .btn 의 베벨 뒤집기만으로는 눈에 들어오지 않아 색을 준다. */
+.stbar__btn[aria-pressed='true'] {
+  background: var(--sel);
+  color: var(--accent-ink);
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  filter: none;
+}
+
+/* 도형 글자는 글꼴에 따라 크기가 들쭉날쭉해서 자리를 못 박아 준다. */
+.stbar__btn--shape {
+  min-width: calc(var(--ui-size) * 2);
+  text-align: center;
+}
+
+.stbar__btn--danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.stbar__range {
+  width: 96px;
+  accent-color: var(--sel);
+}
+
+.stbar__num {
+  width: 3.6em;
+  padding: 1px 3px;
+  background: var(--face-2);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  border-radius: 0;
+  outline: none;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.stbar__gap {
+  width: 4px;
+}

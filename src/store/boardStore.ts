@@ -338,7 +338,7 @@ export const useBoard = create<BoardState>()((set, get) => {
           const sticker = stickers[sid]
           if (!sticker?.noteId || !ids.includes(sticker.noteId)) continue
           const world = worldOf(sticker, s.notes[sticker.noteId])
-          stickers[sid] = { ...sticker, noteId: null, x: world.x, y: world.y, front: false }
+          stickers[sid] = { ...sticker, noteId: null, x: world.x, y: world.y, layer: 'behind' }
         }
 
         return {
@@ -382,7 +382,10 @@ export const useBoard = create<BoardState>()((set, get) => {
         y: Math.round(world.y),
         scale: 1,
         rotation: 0,
-        front: false,
+        layer: 'behind',
+        opacity: 1,
+        mono: false,
+        mask: 'none',
       }
       set((s) => ({
         stickers: { ...s.stickers, [sticker.id]: sticker },
@@ -428,7 +431,8 @@ export const useBoard = create<BoardState>()((set, get) => {
             x: Math.round(world.x - note.x),
             y: Math.round(world.y - note.y),
             // 노트에 붙인 순간에는 노트 위로 올린다. 가려져 버리면 붙인 보람이 없다.
-            front: true,
+            // 본문 밑에 깔고 싶으면 아래 도구 줄에서 옮기면 된다.
+            layer: 'front',
           },
         },
       }))
@@ -443,7 +447,7 @@ export const useBoard = create<BoardState>()((set, get) => {
       set((s) => ({
         stickers: {
           ...s.stickers,
-          [id]: { ...sticker, noteId: null, x: Math.round(world.x), y: Math.round(world.y), front: false },
+          [id]: { ...sticker, noteId: null, x: Math.round(world.x), y: Math.round(world.y), layer: 'behind' },
         },
       }))
     },

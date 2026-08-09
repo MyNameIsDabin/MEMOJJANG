@@ -6,6 +6,7 @@ import { Footer } from './ui/Footer'
 import { SettingsPanel } from './ui/SettingsPanel'
 import { SearchPanel } from './ui/SearchPanel'
 import { NoteStage } from './ui/NoteStage'
+import { StickerBar } from './ui/StickerBar'
 import { Toasts } from './ui/Toasts'
 import { useBoard } from './store/boardStore'
 import { useCanvases } from './store/canvasStore'
@@ -25,6 +26,8 @@ export default function App() {
   const searchOpen = useUi((s) => s.search)
   const settingsOpen = useUi((s) => s.settings)
   const fullscreenNoteId = useUi((s) => s.fullscreenNoteId)
+  const decorating = useUi((s) => s.decorating)
+  const activeStickerId = useUi((s) => s.activeStickerId)
 
   useEffect(() => {
     // 구독을 먼저 걸어야 아래의 hydrate 가 설정 반영을 놓치지 않는다.
@@ -57,12 +60,33 @@ export default function App() {
       </div>
       <Footer />
 
+      {decorating && <DecorateHint />}
+      {decorating && activeStickerId && <StickerBar id={activeStickerId} />}
+
       {canvasesReady && !hasCanvas && <StartPanel />}
-      {hasCanvas && boardReady && isEmpty && !fullscreenNoteId && <EmptyHint />}
+      {hasCanvas && boardReady && isEmpty && !fullscreenNoteId && !decorating && <EmptyHint />}
       {searchOpen && <SearchPanel onClose={useUi.getState().closeSearch} />}
       {settingsOpen && <SettingsPanel onClose={useUi.getState().closeSettings} />}
       <Toasts />
     </>
+  )
+}
+
+/** 꾸미는 중이라는 것과, 무엇을 하면 되는지를 위쪽에 한 줄로 알린다.
+ *  화면이 흑백으로 죽는 것만으로는 '왜' 그런지 알 수 없기 때문이다. */
+function DecorateHint() {
+  const active = useUi((s) => s.activeStickerId)
+  return (
+    <div className="decohint">
+      <span>
+        {active
+          ? '귀퉁이를 끌어 돌리고 키웁니다 · 왼쪽 아래 고리를 노트로 끌면 붙습니다 · Enter 로 마침'
+          : '꾸미는 중 — 빈 곳을 우클릭해 스티커를 붙여 보세요'}
+      </span>
+      <button className="decohint__out" onClick={() => useUi.getState().stopDecorating()}>
+        나가기 (Esc)
+      </button>
+    </div>
   )
 }
 

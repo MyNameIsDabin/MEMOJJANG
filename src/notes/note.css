@@ -102,6 +102,31 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* 안쪽에 깔린 스티커보다 위에 와야 글이 읽힌다. */
+  position: relative;
+  z-index: 1;
+}
+
+.note__bar {
+  position: relative;
+  z-index: 1;
+}
+
+/* 노트 안쪽에 깔리는 스티커. 종이 무늬처럼 본문 밑에 들어가고 노트 밖으로 새지 않는다. */
+.note__deco {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 무늬가 깔린 노트는 본문 바탕을 옅게 해 비쳐 보이게 한다.
+   완전히 투명하게 두면 글이 무늬에 묻혀 읽히지 않는다. */
+.note--deco .memo__text,
+.note--deco .memo__rendered,
+.note--deco .imagenote__frame {
+  background: color-mix(in srgb, var(--face-2) 55%, transparent);
 }
 
 /* ── 크기 조절 손잡이 ──────────────────────────────────────────────── */
