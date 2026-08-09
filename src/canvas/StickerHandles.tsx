@@ -2,7 +2,8 @@
  *
  *  네 귀퉁이는 하나로 돌리기와 키우기를 함께 한다 — 귀퉁이가 커서를 따라오게 두면
  *  중심에서의 **거리**가 크기가 되고 **각도**가 회전이 된다. 손이 가는 대로 움직이므로
- *  둘을 따로 배우지 않아도 된다. 회전이 거슬릴 때는 Shift 로 각도를 붙잡는다.
+ *  둘을 따로 배우지 않아도 된다. 회전이 거슬릴 때는 Shift 로 각도를 붙잡고,
+ *  Ctrl 을 누르면 5도씩 끊어 돌린다.
  *
  *  손잡이는 캔버스 배율을 거슬러 키운다(1/zoom). 안 그러면 축소해 놓고 볼 때
  *  손잡이가 몇 픽셀로 쪼그라들어 잡을 수가 없다. */
@@ -13,6 +14,9 @@ import { toWorld, useBoard, worldOf } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import { Icon } from '../ui/Icon'
 import { sizeOf } from './StickerLayer'
+
+/** Ctrl 을 누른 채 돌릴 때 끊어지는 각(도). */
+const ROTATE_STEP = 5
 
 const CORNERS = [
   { key: 'nw', sx: -1, sy: -1 },
@@ -93,9 +97,13 @@ export function StickerHandles({ id }: { id: string }) {
       STICKER_MAX_SCALE,
       Math.max(STICKER_MIN_SCALE, (t.startScale * distance) / t.distance),
     )
-    const rotation = e.shiftKey
-      ? t.startRotation
-      : t.startRotation + ((Math.atan2(dy, dx) - t.angle) * 180) / Math.PI
+    let rotation = t.startRotation
+    if (!e.shiftKey) {
+      rotation += ((Math.atan2(dy, dx) - t.angle) * 180) / Math.PI
+      // Ctrl 은 각을 5도씩 끊는다. 손으로 잡아 돌리면 3도, 7도 같은 어중간한 값이 되기 쉬운데,
+      // 여러 장을 나란히 기울여 붙일 때는 딱 떨어지는 각이 필요하다.
+      if (e.ctrlKey || e.metaKey) rotation = Math.round(rotation / ROTATE_STEP) * ROTATE_STEP
+    }
 
     useBoard.getState().patchSticker(id, { scale, rotation: Math.round(rotation) })
   }
@@ -162,7 +170,7 @@ export function StickerHandles({ id }: { id: string }) {
             key={corner.key}
             type="button"
             className="sthandles__grip"
-            title="끌어서 돌리고 키웁니다 (Shift: 크기만)"
+            title="끌어서 돌리고 키웁니다 (Ctrl: 5도씩 · Shift: 크기만)"
             style={{
               width: 14 * k,
               height: 14 * k,

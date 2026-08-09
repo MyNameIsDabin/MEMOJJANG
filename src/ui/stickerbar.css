@@ -90,8 +90,16 @@
   accent-color: var(--sel);
 }
 
+/* 숫자 칸은 굴림 단추가 오른쪽 자리를 먹는다. 좁게 두면 오른쪽 맞춤이라
+   '100' 의 끝자리가 잘려 '10' 으로 보인다. 단추를 없애고 폭을 넉넉히 준다. */
+.stbar__num::-webkit-inner-spin-button,
+.stbar__num::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .stbar__num {
-  width: 3.6em;
+  width: 3.4em;
   padding: 1px 3px;
   background: var(--face-2);
   color: var(--text);
