@@ -235,3 +235,5 @@ Windows 에서는 `GetClipboardSequenceNumber` 로 변경 여부만 확인하기
 - **글꼴**: [갈무리](https://github.com/quiple/galmuri) — SIL Open Font License 1.1.
   전문은 [`public/fonts/Galmuri-OFL.md`](public/fonts/Galmuri-OFL.md) 에 함께 담겨 있습니다.
   글꼴은 MIT 가 아니라 OFL 을 따르므로, 배포할 때 이 파일을 빼면 안 됩니다.
+
+함께 담긴 것들의 라이선스는 [`NOTICE.md`](NOTICE.md) 에 정리해 두었습니다.
