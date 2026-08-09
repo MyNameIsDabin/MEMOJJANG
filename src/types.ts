@@ -111,13 +111,28 @@ export type StickerLayer = 'behind' | 'body' | 'front'
 /** 스티커를 오려 내는 틀. */
 export type StickerMask = 'none' | 'circle' | 'star'
 
+/** 노트에 붙었을 때 어디를 기준으로 삼을지.
+ *  노트 크기가 바뀌면 이 자리가 따라 움직이고, 스티커도 그만큼 함께 간다.
+ *  오른쪽 아래에 매달아 두면 노트를 늘려도 늘 오른쪽 아래에 남는다. */
+export type StickerAnchor = 'nw' | 'ne' | 'sw' | 'se' | 'center'
+
+export const STICKER_ANCHORS: { value: StickerAnchor; label: string; hint: string }[] = [
+  { value: 'nw', label: '좌상', hint: '왼쪽 위 모서리를 따라갑니다' },
+  { value: 'ne', label: '우상', hint: '오른쪽 위 모서리를 따라갑니다' },
+  { value: 'sw', label: '좌하', hint: '왼쪽 아래 모서리를 따라갑니다' },
+  { value: 'se', label: '우하', hint: '오른쪽 아래 모서리를 따라갑니다' },
+  { value: 'center', label: '중앙', hint: '노트 한가운데를 따라갑니다' },
+]
+
 /** 캔버스 위에 붙여 놓은 스티커 한 장. */
 export interface Sticker {
   id: string
   assetId: string
   /** 붙어 있는 노트. null 이면 캔버스 배경 위에 그냥 놓인 것. */
   noteId: string | null
-  /** 스티커 **중심**의 자리. 배경 위면 월드 좌표, 노트에 붙어 있으면 그 노트 좌상단 기준 상대 좌표.
+  /** 노트에 붙었을 때 기준으로 삼는 자리. 붙어 있지 않으면 뜻이 없다. */
+  anchor: StickerAnchor
+  /** 스티커 **중심**의 자리. 배경 위면 월드 좌표, 노트에 붙어 있으면 기준점에서의 어긋남.
    *  중심을 기준으로 잡아야 돌리고 키울 때 자리가 밀리지 않는다. */
   x: number
   y: number

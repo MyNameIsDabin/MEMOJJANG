@@ -15,7 +15,7 @@ import {
   type StickerAsset,
   type StickerLayer as StickerLayerName,
 } from '../types'
-import { useBoard, worldOf } from '../store/boardStore'
+import { localOf, useBoard, worldOf } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import { useUi } from '../store/uiStore'
 import { stickerUrl } from '../platform/stickers'
@@ -177,6 +177,7 @@ function StickerView({ id, layer }: { id: string; layer: StickerLayerName }) {
 export function NoteStickers({ noteId }: { noteId: string }) {
   const ids = useBoard(useShallow((s) => s.stickerIds))
   const stickers = useBoard((s) => s.stickers)
+  const note = useBoard((s) => s.notes[noteId])
   const assets = useSettings((s) => s.stickerAssets)
 
   const mine = ids
@@ -188,16 +189,31 @@ export function NoteStickers({ noteId }: { noteId: string }) {
   return (
     <div className="note__deco" aria-hidden>
       {mine.map((sticker) => (
-        <NoteSticker key={sticker.id} sticker={sticker} asset={assets.find((a) => a.id === sticker.assetId)} />
+        <NoteSticker
+          key={sticker.id}
+          sticker={sticker}
+          note={note}
+          asset={assets.find((a) => a.id === sticker.assetId)}
+        />
       ))}
     </div>
   )
 }
 
-function NoteSticker({ sticker, asset }: { sticker: Sticker; asset: StickerAsset | undefined }) {
+function NoteSticker({
+  sticker,
+  asset,
+  note,
+}: {
+  sticker: Sticker
+  asset: StickerAsset | undefined
+  note: Note | undefined
+}) {
   const url = useStickerUrl(asset?.file)
-  if (!asset || !url) return null
+  if (!asset || !url || !note) return null
   const { w, h } = sizeOf(asset)
+  // 노트 안쪽이라 좌상단에서 잰 자리를 그대로 쓴다. 기준점 계산은 localOf 가 맡는다.
+  const at = localOf(sticker, note)
 
   return (
     <img
@@ -207,8 +223,8 @@ function NoteSticker({ sticker, asset }: { sticker: Sticker; asset: StickerAsset
       draggable={false}
       style={{
         position: 'absolute',
-        left: sticker.x,
-        top: sticker.y,
+        left: at.x,
+        top: at.y,
         width: w,
         height: h,
         transform: `translate(-50%, -50%) rotate(${sticker.rotation}deg) scale(${sticker.scale})`,

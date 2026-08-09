@@ -3,7 +3,7 @@
  *  캔버스 위에 떠 있지 않고 화면 아래에 붙어 있다. 캔버스 안에 두면 배율에 따라
  *  같이 줄어들어 잡기 어렵고, 슬라이더처럼 섬세한 것은 특히 그렇다.
  *  대신 노트에 이어 붙이는 손잡이만 스티커 곁에 남겨 뒀다 — 그건 자리가 뜻을 갖기 때문이다. */
-import { STICKER_MIN_OPACITY, type StickerLayer, type StickerMask } from '../types'
+import { STICKER_ANCHORS, STICKER_MIN_OPACITY, type StickerLayer, type StickerMask } from '../types'
 import { useBoard } from '../store/boardStore'
 import { useUi } from '../store/uiStore'
 import { Icon } from './Icon'
@@ -47,6 +47,25 @@ export function StickerBar({ id }: { id: string }) {
           </button>
         ))}
       </span>
+
+      {/* 붙어 있을 때만 뜻이 있다. 노트 크기가 바뀌면 스티커가 이 자리를 따라간다. */}
+      {attached && (
+        <span className="stbar__group">
+          <span className="stbar__label">기준</span>
+          {STICKER_ANCHORS.map((spot) => (
+            <button
+              key={spot.value}
+              type="button"
+              className="btn stbar__btn"
+              aria-pressed={sticker.anchor === spot.value}
+              title={`노트 크기가 바뀌어도 ${spot.hint}`}
+              onClick={() => useBoard.getState().setStickerAnchor(id, spot.value)}
+            >
+              {spot.label}
+            </button>
+          ))}
+        </span>
+      )}
 
       <span className="stbar__group">
         <span className="stbar__label">투명도</span>

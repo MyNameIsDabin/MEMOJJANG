@@ -8,7 +8,7 @@
  *  손잡이가 몇 픽셀로 쪼그라들어 잡을 수가 없다. */
 import { useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { STICKER_MAX_SCALE, STICKER_MIN_SCALE } from '../types'
+import { STICKER_ANCHORS, STICKER_MAX_SCALE, STICKER_MIN_SCALE, type StickerAnchor } from '../types'
 import { toWorld, useBoard, worldOf } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import { Icon } from '../ui/Icon'
@@ -127,9 +127,11 @@ export function StickerHandles({ id }: { id: string }) {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
 
     // 포인터를 붙잡고 있으면 그 밑의 요소는 elementFromPoint 로 찾아야 한다.
-    const under = document.elementFromPoint(e.clientX, e.clientY)
-    const target = under?.closest('[data-note-target]')?.getAttribute('data-note-target')
-    if (target) useBoard.getState().attachSticker(id, target)
+    const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-note-target]')
+    const target = under?.getAttribute('data-note-target')
+    if (!target) return
+    const anchor = (under?.getAttribute('data-anchor') as StickerAnchor | null) ?? 'center'
+    useBoard.getState().attachSticker(id, target, anchor)
   }
 
   const linking = linkTo !== null
@@ -227,7 +229,11 @@ function LinkPreview({ from, to }: { from: { x: number; y: number }; to: { x: nu
   )
 }
 
-/** 끄는 동안 노트마다 나타나는 받는 자리. 여기에 놓으면 붙는다. */
+/** 끄는 동안 노트마다 나타나는 받는 자리.
+ *
+ *  네 모서리와 가운데, 다섯 곳이다. 어디에 놓느냐가 곧 **기준점**이 되고,
+ *  노트 크기가 바뀌면 스티커가 그 자리를 따라 움직인다. 오른쪽 아래에 매달아 두면
+ *  노트를 늘려도 늘 오른쪽 아래에 남는다. */
 function NoteTargets() {
   const noteIds = useBoard(useShallow((s) => s.noteIds))
   const notes = useBoard((s) => s.notes)
@@ -236,28 +242,35 @@ function NoteTargets() {
 
   return (
     <>
-      {noteIds.map((noteId) => {
+      {noteIds.flatMap((noteId) => {
         const n = notes[noteId]
-        if (!n) return null
-        return (
-          <div
-            key={noteId}
-            className="sttarget"
-            data-note-target={noteId}
-            title={n.title}
-            style={{
-              left: n.x + n.w / 2,
-              top: n.y + n.h / 2,
-              width: 30 * k,
-              height: 30 * k,
-              marginLeft: -15 * k,
-              marginTop: -15 * k,
-              borderWidth: Math.max(1, 2 * k),
-            }}
-          >
-            <Icon name="link" />
-          </div>
-        )
+        if (!n) return []
+        return STICKER_ANCHORS.map((spot) => {
+          const fx = spot.value === 'ne' || spot.value === 'se' ? 1 : spot.value === 'center' ? 0.5 : 0
+          const fy = spot.value === 'sw' || spot.value === 'se' ? 1 : spot.value === 'center' ? 0.5 : 0
+          const big = spot.value === 'center'
+          const size = (big ? 30 : 22) * k
+          return (
+            <div
+              key={`${noteId}:${spot.value}`}
+              className={`sttarget${big ? '' : ' sttarget--corner'}`}
+              data-note-target={noteId}
+              data-anchor={spot.value}
+              title={`${n.title} — ${spot.hint}`}
+              style={{
+                left: n.x + n.w * fx,
+                top: n.y + n.h * fy,
+                width: size,
+                height: size,
+                marginLeft: -size / 2,
+                marginTop: -size / 2,
+                borderWidth: Math.max(1, 2 * k),
+              }}
+            >
+              {big && <Icon name="link" />}
+            </div>
+          )
+        })
       })}
     </>
   )

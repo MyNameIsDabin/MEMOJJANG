@@ -53,12 +53,14 @@ export async function readCanvas(path: string): Promise<CanvasDoc | null> {
 }
 
 /** 처음 스티커에는 앞/뒤 두 갈래(front)뿐이었다. 그 사이에 '본문 밑' 이 생겨 켜 이름으로 바뀌었다.
- *  투명도·흑백·오려내기도 나중에 붙은 것이라 없으면 기본값으로 채운다. */
+ *  투명도·흑백·오려내기·기준점도 나중에 붙은 것이라 없으면 기본값으로 채운다.
+ *  기준점이 없던 시절의 좌표는 노트 좌상단에서 잰 것이므로 'nw' 로 읽으면 자리가 그대로다. */
 function upgradeSticker(raw: unknown): Sticker {
   const s = raw as Record<string, unknown>
   return {
     ...(s as unknown as Sticker),
     layer: (s.layer as Sticker['layer']) ?? (s.front ? 'front' : 'behind'),
+    anchor: (s.anchor as Sticker['anchor']) ?? 'nw',
     opacity: typeof s.opacity === 'number' ? s.opacity : 1,
     mono: Boolean(s.mono),
     mask: (s.mask as Sticker['mask']) ?? 'none',

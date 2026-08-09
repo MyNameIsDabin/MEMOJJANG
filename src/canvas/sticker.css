@@ -172,8 +172,17 @@
   pointer-events: auto;
 }
 
+/* 모서리 자리는 아이콘 없이 작은 네모로. 다섯 개가 한 노트에 붙으므로
+   가운데만 크게 두고 나머지는 눈에 덜 걸리게 한다. */
+.sttarget--corner {
+  border-style: solid;
+  background: var(--face-2);
+}
+
 .sttarget:hover {
   background: var(--sel);
   color: var(--accent-ink);
   border-style: solid;
+  /* 어느 자리를 잡는 중인지 확실히 보이도록 살짝 키운다. */
+  transform: scale(1.25);
 }

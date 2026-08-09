@@ -16,6 +16,7 @@ import {
   type Note,
   type NoteKind,
   type Sticker,
+  type StickerAnchor,
   type Viewport,
 } from '../types'
 import { deleteImage } from '../platform/assets'
@@ -92,8 +93,10 @@ interface BoardState {
   addSticker: (assetId: string, world: { x: number; y: number }) => string
   patchSticker: (id: string, patch: Partial<Sticker>) => void
   removeSticker: (id: string) => void
-  /** 노트에 붙인다. 지금 자리를 그 노트 기준 상대 좌표로 바꿔 둔다. */
-  attachSticker: (id: string, noteId: string) => void
+  /** 노트에 붙인다. 지금 자리를 그 노트의 기준점에서 잰 값으로 바꿔 둔다. */
+  attachSticker: (id: string, noteId: string, anchor: StickerAnchor) => void
+  /** 기준점만 갈아 끼운다. 보이는 자리는 그대로 두고 재는 곳만 옮긴다. */
+  setStickerAnchor: (id: string, anchor: StickerAnchor) => void
   /** 떼어 낸다. 붙어 있던 자리 그대로 캔버스 배경 위에 남는다. */
   detachSticker: (id: string) => void
 
@@ -149,10 +152,25 @@ function baseNote(kind: NoteKind, world: { x: number; y: number }, z: number) {
   }
 }
 
-/** 스티커의 실제 월드 좌표. 노트에 붙어 있으면 그 노트를 기준으로 더해 준다. */
+/** 기준점이 노트 좌상단에서 얼마나 떨어져 있는가.
+ *  노트 크기가 바뀌면 이 값이 따라 바뀌고, 그래서 스티커가 모서리를 따라간다. */
+function anchorOffset(note: Note, anchor: StickerAnchor): { x: number; y: number } {
+  const fx = anchor === 'ne' || anchor === 'se' ? 1 : anchor === 'center' ? 0.5 : 0
+  const fy = anchor === 'sw' || anchor === 'se' ? 1 : anchor === 'center' ? 0.5 : 0
+  return { x: note.w * fx, y: note.h * fy }
+}
+
+/** 노트 좌상단에서 잰 스티커 중심의 자리. 노트 안쪽에 깔 때 이 좌표를 그대로 쓴다. */
+export function localOf(sticker: Sticker, note: Note): { x: number; y: number } {
+  const at = anchorOffset(note, sticker.anchor)
+  return { x: at.x + sticker.x, y: at.y + sticker.y }
+}
+
+/** 스티커의 실제 월드 좌표. 노트에 붙어 있으면 그 노트의 기준점에서 재어 더한다. */
 export function worldOf(sticker: Sticker, note: Note | undefined): { x: number; y: number } {
   if (!sticker.noteId || !note) return { x: sticker.x, y: sticker.y }
-  return { x: note.x + sticker.x, y: note.y + sticker.y }
+  const local = localOf(sticker, note)
+  return { x: note.x + local.x, y: note.y + local.y }
 }
 
 export const useBoard = create<BoardState>()((set, get) => {
@@ -378,6 +396,7 @@ export const useBoard = create<BoardState>()((set, get) => {
         id: newId(),
         assetId,
         noteId: null,
+        anchor: 'nw',
         x: Math.round(world.x),
         y: Math.round(world.y),
         scale: 1,
@@ -414,7 +433,7 @@ export const useBoard = create<BoardState>()((set, get) => {
       })
     },
 
-    attachSticker: (id, noteId) => {
+    attachSticker: (id, noteId, anchor) => {
       const { stickers, notes } = get()
       const sticker = stickers[id]
       const note = notes[noteId]
@@ -422,18 +441,39 @@ export const useBoard = create<BoardState>()((set, get) => {
       get().commit()
       // 지금 보이는 자리를 그대로 두려면 좌표계를 바꿔 줘야 한다.
       const world = sticker.noteId ? worldOf(sticker, notes[sticker.noteId]) : sticker
+      const base = worldOf({ ...sticker, noteId, anchor, x: 0, y: 0 }, note)
       set((s) => ({
         stickers: {
           ...s.stickers,
           [id]: {
             ...sticker,
             noteId,
-            x: Math.round(world.x - note.x),
-            y: Math.round(world.y - note.y),
+            anchor,
+            x: Math.round(world.x - base.x),
+            y: Math.round(world.y - base.y),
             // 노트에 붙인 순간에는 노트 위로 올린다. 가려져 버리면 붙인 보람이 없다.
             // 본문 밑에 깔고 싶으면 아래 도구 줄에서 옮기면 된다.
             layer: 'front',
           },
+        },
+      }))
+    },
+
+    setStickerAnchor: (id, anchor) => {
+      const { stickers, notes } = get()
+      const sticker = stickers[id]
+      if (!sticker?.noteId) return
+      const note = notes[sticker.noteId]
+      if (!note || sticker.anchor === anchor) return
+      get().commit()
+      // 재는 곳만 옮기고 눈에 보이는 자리는 그대로 둔다 — 기준을 바꿨다고 스티커가
+      // 훌쩍 날아가 버리면 무엇이 바뀐 건지 알 수 없다.
+      const world = worldOf(sticker, note)
+      const base = worldOf({ ...sticker, anchor, x: 0, y: 0 }, note)
+      set((s) => ({
+        stickers: {
+          ...s.stickers,
+          [id]: { ...sticker, anchor, x: Math.round(world.x - base.x), y: Math.round(world.y - base.y) },
         },
       }))
     },
