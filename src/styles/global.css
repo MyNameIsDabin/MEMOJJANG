@@ -1,0 +1,252 @@
+/* ── 갈무리 (SIL Open Font License 1.1) ─────────────────────────────────
+   원본: https://github.com/quiple/galmuri · 라이선스 전문: public/fonts/Galmuri-OFL.md */
+
+@font-face {
+  font-family: 'Galmuri11';
+  src: url('/fonts/Galmuri11.woff2') format('woff2');
+  font-weight: 400;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Galmuri11';
+  src: url('/fonts/Galmuri11-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-display: block;
+}
+@font-face {
+  font-family: 'Galmuri9';
+  src: url('/fonts/Galmuri9.woff2') format('woff2');
+  font-display: block;
+}
+@font-face {
+  font-family: 'Galmuri14';
+  src: url('/fonts/Galmuri14.woff2') format('woff2');
+  font-display: block;
+}
+@font-face {
+  font-family: 'GalmuriMono11';
+  src: url('/fonts/GalmuriMono11.woff2') format('woff2');
+  font-display: block;
+}
+
+/* ── 테마 ──────────────────────────────────────────────────────────────
+   노트 표면(--face)과 베벨 두 색이 90년대 GUI 느낌을 만든다. */
+
+:root {
+  --ui-font: 'Galmuri11', monospace;
+  --ui-size: 11px;
+  /* 아이콘은 16 격자 위에 그려져 있다. 정수배로만 키워야 도트가 어긋나지 않는다. */
+  --ui-scale: 1;
+
+  --accent-butter: #e8c44a;
+  --accent-mint: #6fc98f;
+  --accent-peach: #ef9a6b;
+  --accent-sky: #6ba6d9;
+  --accent-lilac: #a98fd4;
+  --accent-slate: #9aa0ad;
+  /* 제목 표시줄 글자는 어느 accent 위에서도 읽히도록 항상 짙은 잉크색 */
+  --accent-ink: #16161c;
+
+  --danger: #e5484d;
+  --grid: 24px;
+}
+
+/* 테마 색의 진짜 출처는 src/theme/palette.ts 다. 사용자가 색을 고칠 수 있어야 해서
+   스타일시트에 박아 두지 않고, 앱이 뜨면서 :root 인라인 변수로 얹는다.
+   아래 값은 그때까지의 아주 짧은 순간을 위한 것이며 '밤' 테마와 같다.
+   --chrome-* 는 창 테두리 쪽(제목 줄, 탭, 도구 줄, 상태 줄) 전용으로,
+   이쪽만 베벨 없이 납작하게 가고 노트와 대화상자는 옛 느낌을 지킨다. */
+
+:root {
+  --canvas: #16161f;
+  --canvas-dot: #2b2b3a;
+  --face: #2b2b38;
+  --face-2: #1e1e28;
+  --text: #e9e9f2;
+  --text-dim: #9a9ab0;
+  --bevel-light: #454558;
+  --bevel-dark: #101018;
+  --line: #3a3a4a;
+  --sel: #ffd75e;
+  --shadow: #0000008c;
+
+  --chrome-bg: #0e0e16;
+  --chrome-fg: #b6b6cb;
+  --chrome-line: #24242f;
+  --chrome-hover: #ffffff17;
+  --chrome-press: #ffffff29;
+
+  --syntax-key: #7cc4f0;
+  --syntax-string: #9fdca8;
+  --syntax-number: #f0b26b;
+  --syntax-literal: #c39ce8;
+}
+
+/* ── 리셋 ───────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--ui-font);
+  font-size: var(--ui-size);
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--canvas);
+  /* 픽셀 폰트는 안티에일리어싱을 끄면 원래 모양대로 또렷하게 나온다. */
+  -webkit-font-smoothing: none;
+  text-rendering: geometricPrecision;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+:root[data-pixel='off'] body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: auto;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+textarea,
+input[type='text'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+::selection {
+  background: var(--sel);
+  color: var(--accent-ink);
+}
+
+/* 스크롤바도 시대에 맞춘다. */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: var(--face-2);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+}
+
+/* ── 베벨 ───────────────────────────────────────────────────────────── */
+
+.bevel-out {
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+}
+
+.bevel-in {
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+}
+
+/* ── 공용 버튼 ──────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: calc(var(--ui-size) * 2.2);
+  padding: 4px 10px;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  border-radius: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+.btn:active,
+.btn[aria-pressed='true'] {
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  filter: brightness(0.96);
+}
+
+.btn:focus-visible {
+  outline: 1px dotted var(--text);
+  outline-offset: -4px;
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn--ghost:hover {
+  background: var(--face);
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+}
+
+/* ── 아이콘 ────────────────────────────────────────────────────────── */
+
+.icon {
+  display: block;
+  flex: 0 0 auto;
+  /* 16 격자 위에 그려져 있으므로 정수배로만 키운다 */
+  width: calc(16px * var(--ui-scale));
+  height: calc(16px * var(--ui-scale));
+}
+
+/* ── 창 테두리 쪽 버튼 ─────────────────────────────────────────────
+   베벨 없이 납작하게. 눌린 상태만 배경으로 알린다. */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--chrome-fg);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip:hover:not(:disabled) {
+  background: var(--chrome-hover);
+  color: var(--text);
+}
+
+.chip:active:not(:disabled),
+.chip[aria-pressed='true'] {
+  background: var(--chrome-press);
+  color: var(--text);
+}
+
+.chip:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.chip:focus-visible {
+  outline: 1px dotted currentColor;
+  outline-offset: -3px;
+}

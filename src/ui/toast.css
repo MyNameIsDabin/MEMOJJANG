@@ -1,0 +1,32 @@
+.toasts {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 600;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  max-width: min(560px, calc(100vw - 40px));
+  padding: 6px 12px;
+  background: var(--face);
+  color: var(--text);
+  box-shadow: 3px 3px 0 var(--shadow);
+  cursor: pointer;
+  text-align: left;
+  border-radius: 0;
+}
+
+.toast--error {
+  /* 왼쪽에 굵은 빨간 띠 — 색만으로 구분하지 않도록 문구도 함께 쓴다 */
+  border-left: 6px solid var(--danger);
+}
+
+.toast:hover {
+  filter: brightness(1.1);
+}

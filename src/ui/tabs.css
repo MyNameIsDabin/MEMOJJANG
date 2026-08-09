@@ -1,0 +1,167 @@
+/* 캔버스 탭. 제목 줄 안에 얹히므로 테두리 없이 배경만으로 구분한다.
+   보고 있는 탭은 캔버스와 같은 색이라 아래 화면과 이어져 보인다. */
+
+/* 제목 줄 바로 아래 한 줄. 보고 있는 탭이 캔버스와 같은 색이라
+   여기서 화면으로 그대로 이어져 보인다. */
+.tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  min-width: 0;
+  padding: 0 4px;
+  border-top: 1px solid var(--chrome-line);
+}
+
+.tabs__strip {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs__strip::-webkit-scrollbar {
+  height: 0;
+}
+
+.tabs__btn {
+  display: grid;
+  place-items: center;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--chrome-fg);
+  cursor: pointer;
+}
+
+.tabs__btn:hover:not(:disabled) {
+  background: var(--chrome-hover);
+  color: var(--text);
+}
+
+.tabs__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── 탭 하나 ───────────────────────────────────────────────────────── */
+
+.tab {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 200px;
+  padding-left: 4px;
+  color: var(--chrome-fg);
+}
+
+.tab:hover {
+  background: var(--chrome-hover);
+}
+
+.tab--on {
+  /* 캔버스와 같은 색 — 탭에서 화면으로 그대로 이어진다 */
+  background: var(--canvas);
+  color: var(--text);
+}
+
+.tab--on:hover {
+  background: var(--canvas);
+}
+
+.tab__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 2px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.tab--on .tab__label {
+  font-weight: 700;
+}
+
+.tab__act {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 3px 2px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+  /* 안 보고 있는 탭에서는 조용히 있다가 마우스를 얹으면 드러난다 */
+  opacity: 0;
+}
+
+.tab:hover .tab__act,
+.tab--on .tab__act {
+  opacity: 0.75;
+}
+
+.tab__act:hover {
+  opacity: 1;
+  background: var(--chrome-press);
+}
+
+.tab__act--close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.tab__rename {
+  width: 140px;
+  margin: 2px;
+  padding: 1px 4px;
+  background: var(--face-2);
+  color: var(--text);
+  border: 1px solid var(--sel);
+  border-radius: 0;
+  outline: none;
+}
+
+/* ── 캔버스가 하나도 없을 때 ───────────────────────────────────────── */
+
+.start {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.start__card {
+  pointer-events: auto;
+  width: min(400px, calc(100vw - 40px));
+  padding: 16px 18px 18px;
+  background: var(--face);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.start__head {
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.start__body {
+  margin: 0 0 14px;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+
+.start__actions {
+  display: grid;
+  gap: 6px;
+}

@@ -1,0 +1,826 @@
+.note {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  box-shadow: 3px 3px 0 var(--shadow);
+  /* 픽셀 감성 유지 — 모서리는 각지게 */
+  border-radius: 0;
+}
+
+.note--selected {
+  outline: 2px solid var(--sel);
+  outline-offset: 1px;
+}
+
+.note--collapsed {
+  height: auto !important;
+}
+
+/* ── 제목 표시줄 ────────────────────────────────────────────────────── */
+
+.note__bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 3px;
+  background: var(--note-accent);
+  color: var(--accent-ink);
+  cursor: move;
+  flex: 0 0 auto;
+}
+
+.note__swatch {
+  flex: 0 0 auto;
+  width: calc(var(--ui-size) * 1.3);
+  height: calc(var(--ui-size) * 1.3);
+  padding: 0;
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  cursor: pointer;
+}
+
+.note__swatch:active {
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+}
+
+.note__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+
+.note__title--edit {
+  background: var(--face-2);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  border-radius: 0;
+  outline: none;
+  padding: 0 2px;
+}
+
+.note__ctl {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  /* 아이콘 크기에서 자라도록 둔다. 높이를 못 박으면 배율 2x 에서 아이콘이 삐져나온다. */
+  padding: 1px;
+  line-height: 1;
+  background: var(--face);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  cursor: pointer;
+}
+
+.note__ctl:hover {
+  filter: brightness(1.12);
+}
+
+.note__ctl:active {
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+}
+
+.note__ctl--close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* ── 본문 ──────────────────────────────────────────────────────────── */
+
+.note__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── 크기 조절 손잡이 ──────────────────────────────────────────────── */
+
+.note__grip {
+  position: absolute;
+  touch-action: none;
+}
+
+.note__grip--e {
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.note__grip--s {
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.note__grip--se {
+  right: -3px;
+  bottom: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  /* 오른쪽 아래 모서리에 사선 빗금 — "여기를 잡아 늘리세요" 표시 */
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 2px,
+    var(--text-dim) 2px 3px
+  );
+  z-index: 1;
+}
+
+/* ── 할 일 ─────────────────────────────────────────────────────────── */
+
+.todo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.todo__list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 3px;
+}
+
+.todo__row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 1px 2px;
+}
+
+.todo__row:hover {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.todo__row--dragging {
+  background: color-mix(in srgb, var(--sel) 22%, transparent);
+  outline: 1px dashed var(--sel);
+}
+
+/* 끌어서 순서를 바꾸는 손잡이. 위아래로만 움직인다.
+   평소에는 폭을 0 으로 접어 자리를 아예 차지하지 않는다 — 안 보이는 손잡이 몫으로
+   왼쪽이 비어 있으면 목록이 들쭉날쭉해 보인다. 마우스를 얹은 줄에서만 펼친다.
+   펼치는 동작은 steps() 로 툭툭 끊어 도트 느낌에 맞춘다. */
+.todo__grip {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 0;
+  padding: 2px 0;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: ns-resize;
+  opacity: 0;
+  touch-action: none;
+  transition:
+    width 0.09s steps(3),
+    opacity 0.09s steps(3);
+}
+
+.todo__row:hover .todo__grip,
+.todo__row--dragging .todo__grip {
+  width: calc(16px * var(--ui-scale));
+  opacity: 0.7;
+}
+
+.todo__grip:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.todo__check {
+  flex: 0 0 auto;
+  width: calc(var(--ui-size) * 1.1);
+  height: calc(var(--ui-size) * 1.1);
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+  font-size: calc(var(--ui-size) * 0.9);
+  background: var(--face-2);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  cursor: pointer;
+}
+
+.todo__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  padding: 0;
+  line-height: 1.4;
+  /* 줄바꿈 대신 자동 높이. 긴 항목도 잘리지 않는다. */
+  field-sizing: content;
+}
+
+.todo__row--done .todo__text {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+
+/* 시계·삭제 단추. 평소엔 숨어 있다가 줄에 마우스를 얹으면 나타난다.
+   마감이 정해진 항목은 시계가 계속 보인다 — 그 자체가 표시이기도 하니까. */
+.todo__act {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+  padding: 2px 1px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.todo__row:hover .todo__act,
+.todo__act--on {
+  opacity: 0.75;
+}
+
+.todo__act:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.todo__act--drop:hover {
+  color: var(--danger);
+}
+
+/* ── 마감 표시 ─────────────────────────────────────────────────────── */
+
+.duetag {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.duetag--over {
+  color: var(--danger);
+}
+
+/* 네모난 눈금 하나짜리 막대. 정한 때부터 마감까지 얼마나 왔는지. */
+.duebar {
+  display: block;
+  width: calc(var(--ui-size) * 2.6);
+  height: calc(var(--ui-size) * 0.55);
+  background: var(--face-2);
+  border: 1px solid var(--bevel-dark);
+  overflow: hidden;
+}
+
+.duebar__fill {
+  display: block;
+  height: 100%;
+  background: currentColor;
+}
+
+/* ── 바로가기 ──────────────────────────────────────────────────────── */
+
+.links {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.links__list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 3px;
+}
+
+.links__row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 2px;
+}
+
+.links__row:hover {
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.links__go {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 3px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.links__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.links__go:hover .links__label {
+  text-decoration: underline;
+}
+
+/* 사이트 아이콘. 크기를 못 박아 두어야 줄 높이가 사이트마다 들쭉날쭉해지지 않는다. */
+.favicon {
+  flex: 0 0 auto;
+  width: calc(16px * var(--ui-scale));
+  height: calc(16px * var(--ui-scale));
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* 아이콘을 못 찾았을 때 대신 세우는 글자 타일 */
+.favicon--letter {
+  display: grid;
+  place-items: center;
+  color: var(--accent-ink);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.links__act {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 2px 1px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.links__row:hover .links__act {
+  opacity: 0.75;
+}
+
+.links__act:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.links__act--drop:hover {
+  color: var(--danger);
+}
+
+/* 고치는 중인 줄 */
+.links__edit {
+  display: grid;
+  gap: 3px;
+  padding: 4px;
+  margin: 1px 0;
+  background: var(--face-2);
+  border: 1px solid var(--sel);
+}
+
+.links__input {
+  width: 100%;
+  padding: 2px 4px;
+  background: var(--face);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  outline: none;
+}
+
+.links__input:focus {
+  border-color: var(--sel);
+}
+
+.links__editfoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.links__editfoot .links__act {
+  opacity: 1;
+  padding: 1px 5px;
+}
+
+.links__foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 4px;
+  border-top: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.links__add {
+  padding: 1px 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.links__add:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+/* ── 마감 정하는 작은 창 ───────────────────────────────────────────── */
+
+.duepop {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  z-index: 5;
+  display: grid;
+  gap: 5px;
+  padding: 6px;
+  background: var(--face);
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+
+.duepop__quick {
+  display: flex;
+  gap: 3px;
+}
+
+.duepop__chip {
+  padding: 2px 5px;
+  min-height: 0;
+}
+
+.duepop__input {
+  padding: 2px 4px;
+  background: var(--face-2);
+  color: var(--text);
+  border-radius: 0;
+  outline: none;
+  /* 달력 아이콘이 어두운 테마에서 안 보이는 것을 막는다 */
+  color-scheme: dark light;
+}
+
+.duepop__actions {
+  display: flex;
+  gap: 3px;
+}
+
+.duepop__actions .btn {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 2px 6px;
+}
+
+.todo__foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 4px;
+  border-top: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.todo__add {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 1px 4px;
+}
+
+.todo__add:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+/* ── 메모 ──────────────────────────────────────────────────────────── */
+
+.memo {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.memo__text {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  padding: 4px 5px;
+  background: var(--face-2);
+  color: var(--text);
+  border: none;
+  border-top: 2px solid var(--bevel-dark);
+  outline: none;
+  resize: none;
+  line-height: 1.5;
+  /* 브라우저 기본값에 맡기지 않고 못 박는다 — 캔버스가 "여기는 굴릴 수 있는 칸인가" 를
+     computed overflow 로 판정하기 때문이다 (Board.tsx 의 canScrollHere). */
+  overflow: auto;
+}
+
+/* 코드는 줄이 접히면 읽기 힘들다. 가로로 밀어서 본다. */
+.memo__text--code {
+  font-family: 'GalmuriMono11', monospace;
+  white-space: pre;
+  overflow: auto;
+}
+
+.memo__rendered {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 5px 7px;
+  background: var(--face-2);
+  border-top: 2px solid var(--bevel-dark);
+  overflow: auto;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.memo__html {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--face-2);
+}
+
+.memo__foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-top: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.memo__view {
+  padding: 0 2px;
+  background: var(--face);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  outline: none;
+  cursor: pointer;
+}
+
+.memo__act {
+  display: grid;
+  place-items: center;
+  padding: 1px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.memo__act:hover,
+.memo__act[aria-pressed='true'] {
+  color: var(--text);
+}
+
+.memo__count {
+  margin-left: auto;
+}
+
+/* ── JSON ──────────────────────────────────────────────────────────── */
+
+.json__body {
+  margin: 0;
+  font-family: 'GalmuriMono11', monospace;
+  white-space: pre;
+  line-height: 1.5;
+}
+
+.json__key {
+  color: var(--syntax-key);
+  font-weight: 700;
+}
+
+.json__string {
+  color: var(--syntax-string);
+}
+
+.json__number {
+  color: var(--syntax-number);
+}
+
+.json__literal {
+  color: var(--syntax-literal);
+}
+
+.json__punct {
+  color: var(--text-dim);
+}
+
+.json__broken {
+  margin: 0 0 5px;
+  padding: 2px 5px;
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  border-left: 3px solid var(--danger);
+  color: var(--text-dim);
+}
+
+/* ── 마크다운 ──────────────────────────────────────────────────────── */
+
+.md {
+  line-height: 1.6;
+}
+
+.md > :first-child {
+  margin-top: 0;
+}
+
+.md__h {
+  margin: 10px 0 4px;
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.md__h--1 {
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 2px;
+}
+
+.md__h--2 {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1px;
+}
+
+/* 3단계부터는 앞에 표식만 붙여 단계를 알린다 */
+.md__h--3::before,
+.md__h--4::before,
+.md__h--5::before,
+.md__h--6::before {
+  content: '▪ ';
+  color: var(--text-dim);
+}
+
+.md__p {
+  margin: 0 0 7px;
+  white-space: pre-wrap;
+}
+
+.md__list {
+  margin: 0 0 7px;
+  padding-left: 18px;
+}
+
+.md__quote {
+  margin: 0 0 7px;
+  padding: 2px 0 2px 7px;
+  border-left: 3px solid var(--line);
+  color: var(--text-dim);
+}
+
+.md__hr {
+  margin: 9px 0;
+  border: none;
+  border-top: 2px dashed var(--line);
+}
+
+.md__code {
+  margin: 0 0 7px;
+  padding: 5px 6px;
+  background: var(--face);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  font-family: 'GalmuriMono11', monospace;
+  white-space: pre;
+}
+
+.md__inlinecode {
+  padding: 0 3px;
+  background: var(--face);
+  border: 1px solid var(--line);
+  font-family: 'GalmuriMono11', monospace;
+}
+
+.md__link {
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--sel);
+  cursor: pointer;
+  text-decoration: underline;
+  font: inherit;
+}
+
+.md__table {
+  margin: 0 0 7px;
+  border-collapse: collapse;
+}
+
+.md__table th,
+.md__table td {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.md__table th {
+  background: var(--face);
+}
+
+/* ── 그림 ──────────────────────────────────────────────────────────── */
+
+.imagenote {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.imagenote__frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--face-2);
+  border-top: 2px solid var(--bevel-dark);
+}
+
+.imagenote__frame img {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* 도트 그림을 확대해도 뭉개지지 않게 */
+  image-rendering: pixelated;
+  -webkit-user-drag: none;
+}
+
+.imagenote__missing {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 8px;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.imagenote__foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 4px;
+  border-top: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.imagenote__act {
+  padding: 1px 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.imagenote__act:hover:not(:disabled) {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.imagenote__act:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

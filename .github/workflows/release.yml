@@ -1,0 +1,62 @@
+# 태그를 밀면 윈도우 설치 파일을 만들어 Releases 에 올린다.
+#
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# 올라간 릴리스는 초안(draft)으로 남으므로, 내용을 확인하고 직접 Publish 를 눌러야
+# 사람들에게 보입니다. 자동으로 공개하고 싶으면 아래 releaseDraft 를 false 로.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    permissions:
+      # tauri-action 이 릴리스를 만들고 파일을 붙이려면 쓰기 권한이 필요하다.
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # Rust 빌드는 처음이 몇 분씩 걸린다. 다음 릴리스부터는 이 캐시가 대부분을 줄여 준다.
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - run: npm ci
+
+      # 타입이 깨진 채로 릴리스가 나가지 않도록 먼저 본다.
+      - run: npx tsc --noEmit
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # 버전은 src-tauri/tauri.conf.json 의 것이 __VERSION__ 자리에 들어간다.
+          tagName: v__VERSION__
+          releaseName: '메모짱 v__VERSION__'
+          releaseBody: |
+            ### 받는 곳
+
+            - `Memojjang_x.y.z_x64-setup.exe` — 보통 이걸 받으면 됩니다 (NSIS 설치 파일)
+            - `Memojjang_x.y.z_x64_en-US.msi` — 조직 배포용
+
+            Windows 10/11 x64. Windows 11 에는 필요한 WebView2 런타임이 이미 들어 있습니다.
+
+            서명하지 않은 앱이라 처음 실행할 때 SmartScreen 이 막아설 수 있습니다.
+            **추가 정보 → 실행**을 누르면 됩니다.
+          releaseDraft: true
+          prerelease: false
+          args: --target x86_64-pc-windows-msvc

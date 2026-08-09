@@ -1,0 +1,45 @@
+[package]
+name = "memojjang"
+version = "0.1.0"
+description = "고전 픽셀 감성의 메모·할 일·클립보드 보드"
+authors = ["Memojjang contributors"]
+edition = "2021"
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "memojjang_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# tray-icon: 트레이 상주 / image-png: 클립보드에 png 를 되돌려 쓸 때 필요
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-opener = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+# 이미지 바이트를 IPC 로 실어 나르기 위해 (files.rs 참고)
+base64 = "0.22"
+# 브라우저에서 끌어온 그림을 받아오기 위해. 웹뷰의 fetch 는 CORS 에 막혀 못 쓴다 (net.rs 참고)
+ureq = "2"
+serde_json = "1"
+# 클립보드 감시 스레드에서 직접 읽기 위해 (프론트로 왕복하면 큰 이미지가 IPC 를 막는다)
+arboard = "3"
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[target.'cfg(windows)'.dependencies]
+# GetClipboardSequenceNumber — 클립보드를 열지 않고 변경 여부만 싸게 확인한다
+# 나머지는 전역 단축키로 창을 확실히 앞으로 끌어내기 위한 것 (hotkey.rs 참고)
+windows-sys = { version = "0.59", features = [
+  "Win32_System_DataExchange",
+  "Win32_Foundation",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_System_Threading",
+] }

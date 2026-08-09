@@ -1,0 +1,71 @@
+/* 화면 맨 아래 상태 줄. 눈에 거슬리지 않게 아주 얇다. */
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 4px;
+  background: var(--chrome-bg);
+  color: var(--chrome-fg);
+  border-top: 1px solid var(--chrome-line);
+}
+
+.footer__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.footer__name {
+  color: var(--text);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer__gap {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+.footer__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.footer__btn:hover:not(:disabled) {
+  background: var(--chrome-hover);
+  color: var(--text);
+}
+
+.footer__btn[aria-pressed='true'] {
+  background: var(--chrome-press);
+  color: var(--text);
+}
+
+.footer__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.footer__zoom {
+  min-width: 46px;
+  font-variant-numeric: tabular-nums;
+}

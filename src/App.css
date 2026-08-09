@@ -1,0 +1,40 @@
+/* 빈 보드 안내. 캔버스 조작을 막지 않도록 카드 안쪽만 클릭을 받는다. */
+.hint {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.hint__card {
+  pointer-events: auto;
+  max-width: 340px;
+  padding: 14px 16px 16px;
+  background: var(--face);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.hint__head {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.hint__list {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 6px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.hint__list b {
+  color: var(--text);
+}
+
+.hint__go {
+  margin-top: 14px;
+  width: 100%;
+}

@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 캔버스 파일 — 남의 할 일 목록이 저장소에 들어갈 이유가 없다.
+# 저장소 안에서 앱을 굴리다 보면 여기에 그대로 저장되기 쉽다.
+*.mjb.json
+*.mjb.assets/
+
+# 비밀 — 서명 키와 토큰
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# 이 컴퓨터에서만 쓰는 Claude 설정 (권한 허용 목록 등)
+.claude/settings.local.json
+
+# Rust 빌드 산출물은 src-tauri/.gitignore 가 맡는다.

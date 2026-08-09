@@ -1,0 +1,57 @@
+.board {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--canvas);
+  cursor: grab;
+  touch-action: none;
+}
+
+.board:active {
+  cursor: grabbing;
+}
+
+/* 격자는 DOM 을 늘리지 않고 배경 이미지 한 장으로 그린다.
+   background-position 을 팬 오프셋에 물려두면 무한히 이어지는 것처럼 보인다. */
+.board__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 실제 팬/줌이 걸리는 유일한 레이어. 자식 노트는 전부 여기 안에 절대배치된다. */
+.board__world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+
+/* 무언가를 끌어와 캔버스 위에 있을 때. 놓을 수 있다는 것만 알리면 되므로 얇게. */
+.board__drop {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  border: 2px dashed var(--sel);
+  background: color-mix(in srgb, var(--sel) 8%, transparent);
+}
+
+.board__droptag {
+  padding: 5px 10px;
+  background: var(--face);
+  color: var(--text);
+  border: 2px solid var(--sel);
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+
+.board__marquee {
+  position: fixed;
+  pointer-events: none;
+  border: 1px dashed var(--sel);
+  background: color-mix(in srgb, var(--sel) 14%, transparent);
+}

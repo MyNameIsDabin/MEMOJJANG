@@ -1,0 +1,129 @@
+/* 찾기 창.
+   도트 감각은 남기되(각진 모서리, 1px 선, 픽셀 글꼴) 두꺼운 베벨과 딱딱한 그림자는 덜어냈다.
+   위치도 도구 줄에 딱 붙지 않게 조금 내려, 화면 위쪽이 답답해 보이지 않도록 했다. */
+
+.search {
+  position: fixed;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 350;
+  width: min(520px, calc(100vw - 32px));
+  background: var(--face);
+  border: 1px solid var(--bevel-dark);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.32);
+}
+
+.search__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 5px 5px 8px;
+}
+
+.search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 6px;
+  background: var(--face-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  outline: none;
+}
+
+.search__input:focus {
+  border-color: var(--sel);
+}
+
+.search__count {
+  flex: 0 0 auto;
+  min-width: 40px;
+  text-align: right;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.search__close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.search__close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.search__list {
+  max-height: 300px;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+
+.search__hit {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'kind title'
+    'kind snippet';
+  align-items: baseline;
+  gap: 1px 7px;
+  width: 100%;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search__hit:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.search__hit--on {
+  background: var(--sel);
+  color: var(--accent-ink);
+}
+
+.search__hit--on .search__kind,
+.search__hit--on .search__snippet {
+  color: var(--accent-ink);
+}
+
+.search__kind {
+  grid-area: kind;
+  align-self: center;
+  padding: 0 4px;
+  color: var(--text-dim);
+  border: 1px solid currentColor;
+}
+
+.search__title {
+  grid-area: title;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search__snippet {
+  grid-area: snippet;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search__empty {
+  margin: 0;
+  padding: 6px 9px 9px;
+  color: var(--text-dim);
+}

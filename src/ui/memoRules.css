@@ -1,0 +1,152 @@
+.rules {
+  margin-top: 10px;
+  padding: 8px;
+  background: var(--face-2);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+}
+
+.rules__title {
+  margin: 12px 0 4px;
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.rules__title:first-of-type {
+  margin-top: 4px;
+}
+
+.rules__add {
+  margin-top: 6px;
+}
+
+.rules__builtin {
+  padding: 3px 0;
+}
+
+/* ── 규칙 한 장 ────────────────────────────────────────────────────── */
+
+.rulecard {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding: 6px;
+  background: var(--face);
+  border: 1px solid var(--line);
+}
+
+.rulecard__head {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.rulecard__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 4px;
+  background: var(--face-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  outline: none;
+  font-weight: 700;
+}
+
+.rulecard__act {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  min-width: calc(var(--ui-size) * 1.5);
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.rulecard__act:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.rulecard__act:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.rulecard__act--drop:hover {
+  color: var(--danger);
+}
+
+.rulecard__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rulecard__select {
+  flex: 0 0 auto;
+  padding: 1px 2px;
+  background: var(--face-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  outline: none;
+  cursor: pointer;
+}
+
+.rulecard__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 4px;
+  background: var(--face-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  outline: none;
+}
+
+.rulecard__value:focus {
+  border-color: var(--sel);
+}
+
+.rulecard__value--bad {
+  border-color: var(--danger);
+}
+
+.rulecard__arrow {
+  color: var(--text-dim);
+}
+
+.rulecard__bad {
+  margin: 0;
+  color: var(--danger);
+}
+
+/* 시험 입력칸 — 규칙이 걸리는지 그 자리에서 보여 준다 */
+.rulecard__try {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--line);
+}
+
+.rulecard__verdict {
+  flex: 0 0 auto;
+  min-width: calc(var(--ui-size) * 4);
+  text-align: center;
+  padding: 1px 4px;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+}
+
+.rulecard__verdict--hit {
+  background: var(--sel);
+  border-color: var(--sel);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
