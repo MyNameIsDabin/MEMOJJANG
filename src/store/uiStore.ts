@@ -14,6 +14,11 @@ interface UiState {
   /** 화면 가득 펼쳐 놓은 노트. 없으면 평소대로 캔버스만 보인다. */
   fullscreenNoteId: string | null
 
+  /** 꾸미기 모드 — 노트는 잠기고 스티커만 만진다. */
+  decorating: boolean
+  /** 지금 손보고 있는 스티커. 손잡이가 이 스티커에만 붙는다. */
+  activeStickerId: string | null
+
   openSearch: () => void
   closeSearch: () => void
   toggleSearch: () => void
@@ -27,6 +32,10 @@ interface UiState {
   collapseNote: () => void
   /** 펼쳐 보고 있을 때만 대상을 갈아 끼운다. 아니면 아무 일도 하지 않는다. */
   followFullscreen: (id: string) => void
+
+  toggleDecorating: () => void
+  stopDecorating: () => void
+  pickSticker: (id: string | null) => void
 }
 
 export const useUi = create<UiState>()((set) => ({
@@ -35,6 +44,8 @@ export const useUi = create<UiState>()((set) => ({
   noteList: false,
   renamingNoteId: null,
   fullscreenNoteId: null,
+  decorating: false,
+  activeStickerId: null,
 
   // 검색과 설정이 동시에 뜨면 서로 가린다. 한 번에 하나만.
   openSearch: () => set({ search: true, settings: false, noteList: false }),
@@ -54,4 +65,16 @@ export const useUi = create<UiState>()((set) => ({
   expandNote: (id) => set({ fullscreenNoteId: id }),
   collapseNote: () => set({ fullscreenNoteId: null }),
   followFullscreen: (id) => set((s) => (s.fullscreenNoteId ? { fullscreenNoteId: id } : {})),
+
+  // 꾸미는 동안에는 노트를 펼쳐 놓을 수 없다 — 캔버스가 안 보이면 붙일 자리도 없다.
+  toggleDecorating: () =>
+    set((s) => ({
+      decorating: !s.decorating,
+      activeStickerId: null,
+      fullscreenNoteId: s.decorating ? s.fullscreenNoteId : null,
+      search: false,
+      noteList: false,
+    })),
+  stopDecorating: () => set({ decorating: false, activeStickerId: null }),
+  pickSticker: (id) => set({ activeStickerId: id }),
 }))

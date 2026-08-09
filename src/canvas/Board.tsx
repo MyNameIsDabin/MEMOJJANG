@@ -6,6 +6,11 @@ import { toWorld, useBoard } from '../store/boardStore'
 import { GRID_SIZE, useSettings } from '../store/settingsStore'
 import { NoteShell } from '../notes/NoteShell'
 import { BoardMenu, type MenuAnchor } from '../ui/BoardMenu'
+import { StickerPicker } from '../ui/StickerPicker'
+import { StickerLayer } from './StickerLayer'
+import { StickerHandles } from './StickerHandles'
+import { StickerLinks } from './StickerLinks'
+import { useUi } from '../store/uiStore'
 import { handleDrop, shouldHandleDrop } from '../actions/drop'
 import { lastPointer } from './pointer'
 import './board.css'
@@ -61,6 +66,13 @@ export function Board() {
   const [marquee, setMarquee] = useState<Marquee | null>(null)
   const [menu, setMenu] = useState<MenuAnchor | null>(null)
   const [dropping, setDropping] = useState(false)
+  /** 꾸미기 모드에서 우클릭한 자리 — 스티커 서랍이 여기에 뜬다. */
+  const [drawer, setDrawer] = useState<{ screenX: number; screenY: number; world: { x: number; y: number } } | null>(
+    null,
+  )
+
+  const decorating = useUi((s) => s.decorating)
+  const activeStickerId = useUi((s) => s.activeStickerId)
 
   /* 끌어다 놓기.
      dragleave 는 자식 위로 옮겨갈 때도 터지므로, 들어오고 나간 횟수를 세어
@@ -156,6 +168,9 @@ export function Board() {
     }
 
     setMenu(null)
+    // 스티커 바깥을 누르면 손잡이를 거둔다 — 그것으로 배치가 끝난다.
+    if (useUi.getState().activeStickerId) useUi.getState().pickSticker(null)
+
     const { viewport: vp, clearSelection } = useBoard.getState()
 
     if (e.button === 0 && e.shiftKey) {
@@ -224,11 +239,26 @@ export function Board() {
     }
   }, [marquee])
 
-  const onContextMenu = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return
-    e.preventDefault()
-    setMenu({ screenX: e.clientX, screenY: e.clientY })
-  }, [])
+  const onContextMenu = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      // 꾸미는 중에는 노트 위에서 눌렀더라도 스티커 서랍이 뜬다 —
+      // 그 자리에 붙이려고 누르는 것이기 때문이다.
+      if (decorating) {
+        e.preventDefault()
+        setMenu(null)
+        setDrawer({
+          screenX: e.clientX,
+          screenY: e.clientY,
+          world: toWorld(useBoard.getState().viewport, e.clientX, e.clientY),
+        })
+        return
+      }
+      if (e.target !== e.currentTarget) return
+      e.preventDefault()
+      setMenu({ screenX: e.clientX, screenY: e.clientY })
+    },
+    [decorating],
+  )
 
   const gridStyle = showGrid
     ? {
@@ -241,7 +271,7 @@ export function Board() {
   return (
     <div
       ref={boardRef}
-      className="board"
+      className={`board${decorating ? ' board--decorating' : ''}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -262,9 +292,20 @@ export function Board() {
           transform: `translate3d(${viewport.x}px, ${viewport.y}px, 0) scale(${viewport.zoom})`,
         }}
       >
+        <StickerLayer front={false} />
+
         {noteIds.map((id) => (
           <NoteShell key={id} id={id} />
         ))}
+
+        <StickerLayer front />
+
+        {decorating && (
+          <div className="stickers stickers--ui">
+            <StickerLinks />
+            {activeStickerId && <StickerHandles id={activeStickerId} />}
+          </div>
+        )}
       </div>
 
       {marquee && (
@@ -281,6 +322,15 @@ export function Board() {
       )}
 
       {menu && <BoardMenu anchor={menu} onClose={() => setMenu(null)} />}
+
+      {drawer && (
+        <StickerPicker
+          screenX={drawer.screenX}
+          screenY={drawer.screenY}
+          world={drawer.world}
+          onClose={() => setDrawer(null)}
+        />
+      )}
     </div>
   )
 }

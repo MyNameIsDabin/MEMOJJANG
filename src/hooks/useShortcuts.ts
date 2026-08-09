@@ -13,6 +13,35 @@ export function useShortcuts(): void {
       const mod = e.ctrlKey || e.metaKey
       const inField = isTextField(e.target)
       const board = useBoard.getState()
+      const ui = useUi.getState()
+
+      /* 꾸미는 중에는 노트를 건드리는 키를 전부 막는다 — 화면과 스티커만 만지는 모드다.
+         Enter 로 스티커 배치를 끝내고, Esc 로 손잡이를 거두거나 모드를 벗어난다. */
+      if (ui.decorating && !inField) {
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          ui.pickSticker(null)
+          return
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          if (ui.activeStickerId) ui.pickSticker(null)
+          else ui.stopDecorating()
+          return
+        }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && ui.activeStickerId) {
+          e.preventDefault()
+          const id = ui.activeStickerId
+          ui.pickSticker(null)
+          board.removeSticker(id)
+          return
+        }
+        // 화면을 다루는 것과 되돌리기만 남기고 나머지는 흘려보낸다.
+        const allowed =
+          (mod && (e.key === '0' || e.key.toLowerCase() === 'z' || e.key.toLowerCase() === 'y')) ||
+          e.key.startsWith('Arrow')
+        if (!allowed) return
+      }
 
       // 노트 추가는 입력 중에도 받는다 — 흐름이 끊기지 않도록.
       if (mod && !e.shiftKey && (e.key === '1' || e.key === '2' || e.key === '3')) {

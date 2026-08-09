@@ -4,6 +4,7 @@ import { create } from 'zustand'
 import { storage } from '../platform/storage'
 import { applyPalette, type Palette, type ThemeKey } from '../theme/palette'
 import type { UserRule } from '../notes/detect'
+import type { StickerAsset } from '../types'
 
 export type { ThemeKey }
 
@@ -100,6 +101,9 @@ export interface Settings {
 
   /** 직접 더한 글꼴 */
   userFonts: UserFont[]
+
+  /** 꾸미기 스티커 보관함. 캔버스가 아니라 앱에 딸린다 — 여러 캔버스에서 함께 쓴다. */
+  stickerAssets: StickerAsset[]
 }
 
 export const DEFAULT_HOTKEY = 'CommandOrControl+Shift+Space'
@@ -127,6 +131,7 @@ export const DEFAULT_SETTINGS: Settings = {
   memoDisabledBuiltins: [],
   memoUserRules: [],
   userFonts: [],
+  stickerAssets: [],
 }
 
 export const GRID_SIZE = 24
@@ -181,7 +186,7 @@ export function isThemeColorChanged(key: keyof Palette): boolean {
 export function pickSettings(s: SettingsState): Settings {
   const { font, fontScale, theme, showGrid, snapToGrid } = s
   const { alwaysOnTop, minimizeToTray, clipboardWatch, globalHotkey, themeColors } = s
-  const { memoAutoDetect, memoDisabledBuiltins, memoUserRules, userFonts } = s
+  const { memoAutoDetect, memoDisabledBuiltins, memoUserRules, userFonts, stickerAssets } = s
   return {
     font,
     fontScale,
@@ -197,6 +202,7 @@ export function pickSettings(s: SettingsState): Settings {
     memoDisabledBuiltins,
     memoUserRules,
     userFonts,
+    stickerAssets,
   }
 }
 

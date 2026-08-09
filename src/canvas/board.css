@@ -11,6 +11,12 @@
   cursor: grabbing;
 }
 
+/* 꾸미는 동안 노트는 잠긴다. 옮기지도 고치지도 못하고, 그 위를 끌면 캔버스가 움직인다.
+   pointer-events 를 끄는 것만으로 충분하다 — 이벤트가 그대로 캔버스까지 내려간다. */
+.board--decorating .note {
+  pointer-events: none;
+}
+
 /* 격자는 DOM 을 늘리지 않고 배경 이미지 한 장으로 그린다.
    background-position 을 팬 오프셋에 물려두면 무한히 이어지는 것처럼 보인다. */
 .board__grid {

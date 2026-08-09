@@ -29,6 +29,10 @@ export type IconName =
   | 'expand'
   | 'shrink'
   | 'download'
+  | 'sticker'
+  | 'link'
+  | 'layers'
+  | 'trash'
   | 'winMinimize'
   | 'winMaximize'
   | 'winRestore'
@@ -91,6 +95,20 @@ const PATHS: Record<IconName, string> = {
   // 아래로 향한 화살표와 받침 — 내려받기.
   // 화살촉은 대각선 대신 한 칸씩 좁아지는 계단으로 그린다(위 규칙).
   download: 'M7,2h2v6h-2zM4,8h8v1h-8zM5,9h6v1h-6zM6,10h4v1h-4zM7,11h2v1h-2zM2,13h12v2h-12z',
+
+  // 한 귀퉁이가 접힌 종이 — 붙이는 스티커.
+  // 접힌 자리는 계단으로 파낸다(대각선을 쓰지 않는 규칙).
+  sticker:
+    'M2,1h12v8h-5v5h-7zM4,3h8v1h-8zM4,5h8v1h-8zM4,7h4v1h-4zM10,10h3v1h-2v1h-1zM10,12h1v1h-1z',
+
+  // 고리 두 개가 맞물린 사슬 — 노트에 붙여 두기
+  link: 'M2,6h5v1h-4v2h4v1h-5zM9,6h5v4h-5v-1h4v-2h-4zM6,7h4v2h-4z',
+
+  // 겹쳐 놓은 두 장 — 앞뒤 순서 바꾸기
+  layers: 'M1,3h10v4h-10zM5,9h10v4h-10z',
+
+  // 뚜껑과 몸통 — 보관함에서 빼기
+  trash: 'M6,1h4v2h-4zM2,3h12v2h-12zM4,6h8v9h-8zM6,8h1v5h-1zM9,8h1v5h-1z',
 
   winMinimize: 'M3,8h10v1h-10z',
   winMaximize: 'M3,3h10v10h-10zM4,4h8v8h-8z',

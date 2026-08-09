@@ -35,6 +35,7 @@ export function Toolbar() {
   const snapToGrid = useSettings((s) => s.snapToGrid)
   const font = useSettings((s) => `${s.font}/${s.fontScale}`)
   const hasCanvas = useCanvases((s) => s.activeId !== null)
+  const decorating = useUi((s) => s.decorating)
 
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -61,6 +62,14 @@ export function Toolbar() {
       label: '격자에 붙이기',
       pressed: snapToGrid,
       run: () => useSettings.getState().set('snapToGrid', !snapToGrid),
+    },
+    {
+      key: 'decorate',
+      icon: 'sticker',
+      label: '꾸미기',
+      hint: '우클릭으로 스티커',
+      pressed: decorating,
+      run: () => useUi.getState().toggleDecorating(),
     },
     {
       key: 'search',

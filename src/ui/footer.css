@@ -157,8 +157,15 @@
   text-overflow: ellipsis;
 }
 
-.notelist__item--on .notelist__sub,
+.notelist__item--on .notelist__sub {
+  color: inherit;
+}
+
+/* 짚은 줄은 바탕이 밝아진다. 배지가 제 어두운 바탕을 그대로 두면 글자가 묻히므로,
+   바탕을 걷어내고 테두리만 남겨 줄 색 위에 그대로 얹는다. */
 .notelist__item--on .notelist__kind {
+  background: transparent;
+  border-color: currentColor;
   color: inherit;
 }
 

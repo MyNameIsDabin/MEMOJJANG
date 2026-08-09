@@ -7,12 +7,15 @@ import {
   MIN_NOTE_H,
   MIN_NOTE_W,
   MIN_ZOOM,
+  STICKER_MAX_SCALE,
+  STICKER_MIN_SCALE,
   newId,
   type AccentKey,
   type CanvasDoc,
   type CreatableKind,
   type Note,
   type NoteKind,
+  type Sticker,
   type Viewport,
 } from '../types'
 import { deleteImage } from '../platform/assets'
@@ -24,6 +27,8 @@ import { detectView } from '../notes/detect'
 interface Snapshot {
   notes: Record<string, Note>
   noteIds: string[]
+  stickers: Record<string, Sticker>
+  stickerIds: string[]
 }
 
 const UNDO_LIMIT = 50
@@ -51,6 +56,8 @@ function snapZoom(zoom: number): number {
 interface BoardState {
   notes: Record<string, Note>
   noteIds: string[]
+  stickers: Record<string, Sticker>
+  stickerIds: string[]
   viewport: Viewport
   selection: string[]
   /** 캔버스를 다 읽기 전에는 자동 저장이 돌면 안 된다.
@@ -64,7 +71,7 @@ interface BoardState {
   /** 캔버스 전환 시작 — 다음 hydrate 까지 자동 저장을 멈춘다. */
   unhydrate: () => void
   /** 파일에 쓸 알맹이. 캔버스 이름은 파일 계층이 붙인다. */
-  contents: () => Pick<CanvasDoc, 'notes' | 'viewport'>
+  contents: () => Pick<CanvasDoc, 'notes' | 'viewport' | 'stickers'>
 
   addNote: (kind: CreatableKind, world: { x: number; y: number }) => string
   /** 붙여넣은 글자를 메모로 얹는다. */
@@ -80,6 +87,15 @@ interface BoardState {
   removeNotes: (ids: string[]) => void
   duplicateNotes: (ids: string[]) => void
   raise: (id: string) => void
+
+  /** 스티커를 캔버스 배경 위(월드 좌표)에 새로 붙인다. */
+  addSticker: (assetId: string, world: { x: number; y: number }) => string
+  patchSticker: (id: string, patch: Partial<Sticker>) => void
+  removeSticker: (id: string) => void
+  /** 노트에 붙인다. 지금 자리를 그 노트 기준 상대 좌표로 바꿔 둔다. */
+  attachSticker: (id: string, noteId: string) => void
+  /** 떼어 낸다. 붙어 있던 자리 그대로 캔버스 배경 위에 남는다. */
+  detachSticker: (id: string) => void
 
   setViewport: (vp: Viewport | ((prev: Viewport) => Viewport)) => void
   zoomAt: (screenX: number, screenY: number, factor: number) => void
@@ -133,6 +149,12 @@ function baseNote(kind: NoteKind, world: { x: number; y: number }, z: number) {
   }
 }
 
+/** 스티커의 실제 월드 좌표. 노트에 붙어 있으면 그 노트를 기준으로 더해 준다. */
+export function worldOf(sticker: Sticker, note: Note | undefined): { x: number; y: number } {
+  if (!sticker.noteId || !note) return { x: sticker.x, y: sticker.y }
+  return { x: note.x + sticker.x, y: note.y + sticker.y }
+}
+
 export const useBoard = create<BoardState>()((set, get) => {
   const topZ = () => {
     const { notes, noteIds } = get()
@@ -140,8 +162,13 @@ export const useBoard = create<BoardState>()((set, get) => {
   }
 
   const snapshot = (): Snapshot => {
-    const { notes, noteIds } = get()
-    return { notes: { ...notes }, noteIds: [...noteIds] }
+    const { notes, noteIds, stickers, stickerIds } = get()
+    return {
+      notes: { ...notes },
+      noteIds: [...noteIds],
+      stickers: { ...stickers },
+      stickerIds: [...stickerIds],
+    }
   }
 
   const insert = (note: Note) => {
@@ -157,6 +184,8 @@ export const useBoard = create<BoardState>()((set, get) => {
   return {
     notes: {},
     noteIds: [],
+    stickers: {},
+    stickerIds: [],
     viewport: { x: 0, y: 0, zoom: 1 },
     selection: [],
     hydrated: false,
@@ -166,8 +195,18 @@ export const useBoard = create<BoardState>()((set, get) => {
     unhydrate: () => set({ hydrated: false }),
 
     hydrate: (doc) => {
+      const empty = {
+        notes: {},
+        noteIds: [],
+        stickers: {},
+        stickerIds: [],
+        selection: [],
+        hydrated: true,
+        past: [],
+        future: [],
+      }
       if (!doc?.notes) {
-        set({ notes: {}, noteIds: [], viewport: { x: 0, y: 0, zoom: 1 }, hydrated: true, past: [], future: [] })
+        set({ ...empty, viewport: { x: 0, y: 0, zoom: 1 } })
         return
       }
       const notes: Record<string, Note> = {}
@@ -176,20 +215,33 @@ export const useBoard = create<BoardState>()((set, get) => {
         notes[n.id] = n
         noteIds.push(n.id)
       }
+
+      const stickers: Record<string, Sticker> = {}
+      const stickerIds: string[] = []
+      for (const s of doc.stickers ?? []) {
+        // 붙어 있던 노트가 사라진 캔버스라면 배경 위로 돌려놓는다.
+        // 없는 노트를 가리킨 채로 두면 화면 어디에도 그려지지 않는다.
+        stickers[s.id] = s.noteId && !notes[s.noteId] ? { ...s, noteId: null } : s
+        stickerIds.push(s.id)
+      }
+
       set({
+        ...empty,
         notes,
         noteIds,
+        stickers,
+        stickerIds,
         viewport: doc.viewport ?? { x: 0, y: 0, zoom: 1 },
-        selection: [],
-        hydrated: true,
-        past: [],
-        future: [],
       })
     },
 
     contents: () => {
-      const { notes, noteIds, viewport } = get()
-      return { notes: noteIds.map((id) => notes[id]).filter(Boolean), viewport }
+      const { notes, noteIds, stickers, stickerIds, viewport } = get()
+      return {
+        notes: noteIds.map((id) => notes[id]).filter(Boolean),
+        stickers: stickerIds.map((id) => stickers[id]).filter(Boolean),
+        viewport,
+      }
     },
 
     addNote: (kind, world) => {
@@ -278,10 +330,22 @@ export const useBoard = create<BoardState>()((set, get) => {
       set((s) => {
         const next = { ...s.notes }
         for (const id of ids) delete next[id]
+
+        // 그 노트에 붙어 있던 스티커는 지우지 않는다. 붙어 있던 자리 그대로
+        // 캔버스 배경 위에 남긴다 — 노트를 지웠다고 꾸며 놓은 것까지 사라지면 놀란다.
+        const stickers = { ...s.stickers }
+        for (const sid of s.stickerIds) {
+          const sticker = stickers[sid]
+          if (!sticker?.noteId || !ids.includes(sticker.noteId)) continue
+          const world = worldOf(sticker, s.notes[sticker.noteId])
+          stickers[sid] = { ...sticker, noteId: null, x: world.x, y: world.y, front: false }
+        }
+
         return {
           notes: next,
           noteIds: s.noteIds.filter((id) => !ids.includes(id)),
           selection: s.selection.filter((id) => !ids.includes(id)),
+          stickers,
         }
       })
     },
@@ -306,6 +370,82 @@ export const useBoard = create<BoardState>()((set, get) => {
           selection: clones.map((c) => c.id),
         }
       })
+    },
+
+    addSticker: (assetId, world) => {
+      get().commit()
+      const sticker: Sticker = {
+        id: newId(),
+        assetId,
+        noteId: null,
+        x: Math.round(world.x),
+        y: Math.round(world.y),
+        scale: 1,
+        rotation: 0,
+        front: false,
+      }
+      set((s) => ({
+        stickers: { ...s.stickers, [sticker.id]: sticker },
+        stickerIds: [...s.stickerIds, sticker.id],
+      }))
+      return sticker.id
+    },
+
+    patchSticker: (id, patch) =>
+      set((s) => {
+        const cur = s.stickers[id]
+        if (!cur) return s
+        const next = { ...cur, ...patch }
+        if (patch.scale !== undefined) {
+          next.scale = clamp(patch.scale, STICKER_MIN_SCALE, STICKER_MAX_SCALE)
+        }
+        return { stickers: { ...s.stickers, [id]: next } }
+      }),
+
+    removeSticker: (id) => {
+      get().commit()
+      set((s) => {
+        const stickers = { ...s.stickers }
+        delete stickers[id]
+        return { stickers, stickerIds: s.stickerIds.filter((i) => i !== id) }
+      })
+    },
+
+    attachSticker: (id, noteId) => {
+      const { stickers, notes } = get()
+      const sticker = stickers[id]
+      const note = notes[noteId]
+      if (!sticker || !note) return
+      get().commit()
+      // 지금 보이는 자리를 그대로 두려면 좌표계를 바꿔 줘야 한다.
+      const world = sticker.noteId ? worldOf(sticker, notes[sticker.noteId]) : sticker
+      set((s) => ({
+        stickers: {
+          ...s.stickers,
+          [id]: {
+            ...sticker,
+            noteId,
+            x: Math.round(world.x - note.x),
+            y: Math.round(world.y - note.y),
+            // 노트에 붙인 순간에는 노트 위로 올린다. 가려져 버리면 붙인 보람이 없다.
+            front: true,
+          },
+        },
+      }))
+    },
+
+    detachSticker: (id) => {
+      const { stickers, notes } = get()
+      const sticker = stickers[id]
+      if (!sticker?.noteId) return
+      get().commit()
+      const world = worldOf(sticker, notes[sticker.noteId])
+      set((s) => ({
+        stickers: {
+          ...s.stickers,
+          [id]: { ...sticker, noteId: null, x: Math.round(world.x), y: Math.round(world.y), front: false },
+        },
+      }))
     },
 
     raise: (id) =>

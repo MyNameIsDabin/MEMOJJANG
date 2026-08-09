@@ -1,0 +1,193 @@
+/* 꾸미기 스티커.
+   전부 .board__world 안에 들어가므로 좌표는 월드 좌표 그대로 쓴다. */
+
+.stickers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  /* 스티커 자신만 눌리게 한다. 빈 자리는 캔버스가 받아야 화면을 끌 수 있다. */
+  pointer-events: none;
+}
+
+/* 노트의 z 는 1 부터 계속 커진다. 스티커에 숫자를 매겨 다투게 하는 대신
+   층을 아예 나눠 둔다 — 뒤쪽은 0, 앞쪽은 노트가 닿을 일 없는 높이. */
+.stickers--back {
+  z-index: 0;
+}
+
+.stickers--front {
+  z-index: 100000;
+}
+
+/* 손잡이·연결선이 놓이는 자리. 늘 맨 위여야 잡을 수 있다. */
+.stickers--ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  z-index: 100001;
+  pointer-events: none;
+}
+
+.sticker {
+  position: absolute;
+  transform-origin: 50% 50%;
+  /* 도트 그림이 많으므로 확대해도 뭉개지지 않게 둔다. */
+  image-rendering: pixelated;
+}
+
+/* 꾸미는 중에만 잡힌다. 평소에는 그냥 그림이라 노트를 가리지 않는다. */
+.sticker--live {
+  pointer-events: auto;
+  cursor: move;
+}
+
+.sticker__img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 보관함에서 그림이 사라진 스티커. 지우지 않고 자리만 알려 준다. */
+.sticker__gone {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--face-2);
+  border: 2px dashed var(--line);
+  color: var(--text-dim);
+  text-align: center;
+  overflow: hidden;
+}
+
+/* ── 손잡이 ────────────────────────────────────────────────────────── */
+
+.sthandles {
+  position: absolute;
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+
+.sthandles__frame {
+  position: absolute;
+  inset: 0;
+  outline-style: solid;
+  outline-color: var(--sel);
+}
+
+.sthandles__grip {
+  position: absolute;
+  padding: 0;
+  background: var(--face);
+  border-style: solid;
+  border-color: var(--sel);
+  border-radius: 0;
+  pointer-events: auto;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.sthandles__grip:hover {
+  background: var(--sel);
+}
+
+/* ── 스티커 도구 단추 ─────────────────────────────────────────────── */
+
+.sttools {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  background: var(--face);
+  box-shadow: 2px 2px 0 var(--shadow);
+  pointer-events: auto;
+}
+
+.sttools__btn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--face-2);
+  color: var(--text);
+  border-style: solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  border-radius: 0;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.sttools__btn:hover {
+  background: var(--chrome-hover);
+}
+
+.sttools__btn[aria-pressed='true'] {
+  background: var(--sel);
+  color: var(--accent-ink);
+}
+
+.sttools__btn--danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* 아이콘은 단추 크기를 따라간다 — 배율을 되돌린 단추 안에서 제 몫만큼만 차지하도록. */
+.sttools__btn .icon,
+.sttarget .icon {
+  width: 70%;
+  height: 70%;
+}
+
+/* ── 연결선 ────────────────────────────────────────────────────────── */
+
+.stlink {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.stlink__line {
+  stroke: var(--sel);
+  stroke-dasharray: 6 4;
+  fill: none;
+}
+
+.stlink--preview line {
+  stroke: var(--sel);
+  stroke-dasharray: 4 4;
+  fill: none;
+}
+
+/* 누르는 자리. 보이지 않지만 굵게 깔아 두어야 가는 선도 잡힌다.
+   커서는 가위 — 여기서 누르면 끊어진다는 것을 말 없이 알린다. */
+.stlink__hit {
+  stroke: transparent;
+  fill: none;
+  pointer-events: stroke;
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" shape-rendering="crispEdges"><path fill="%23000" d="M4,2h2v2h-2zM5,4h2v2h-2zM6,6h2v2h-2zM12,2h2v2h-2zM11,4h2v2h-2zM10,6h2v2h-2zM8,8h2v2h-2zM3,11h4v4h-4zM11,11h4v4h-4z"/><path fill="%23fff" d="M3,1h2v2h-2zM4,3h2v2h-2zM5,5h2v2h-2zM11,1h2v2h-2zM10,3h2v2h-2zM9,5h2v2h-2zM7,7h2v2h-2zM2,10h4v4h-4zM3,11h2v2h-2zM10,10h4v4h-4zM11,11h2v2h-2z"/></svg>')
+      8 8,
+    pointer;
+}
+
+/* ── 연결 받는 자리 ───────────────────────────────────────────────── */
+
+.sttarget {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  background: var(--face);
+  color: var(--sel);
+  border-style: dashed;
+  border-color: var(--sel);
+  pointer-events: auto;
+}
+
+.sttarget:hover {
+  background: var(--sel);
+  color: var(--accent-ink);
+  border-style: solid;
+}

@@ -48,6 +48,7 @@ export async function readCanvas(path: string): Promise<CanvasDoc | null> {
     name: doc.name ?? '',
     notes: doc.notes.map(upgradeNote).filter((n): n is Note => n !== null),
     viewport: doc.viewport ?? { x: 0, y: 0, zoom: 1 },
+    stickers: Array.isArray(doc.stickers) ? doc.stickers : [],
   }
 }
 

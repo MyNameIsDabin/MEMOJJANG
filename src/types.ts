@@ -89,6 +89,46 @@ export interface Viewport {
   zoom: number
 }
 
+/* ── 꾸미기 스티커 ────────────────────────────────────────────────────
+   보관함(StickerAsset)은 앱에 딸리고 여러 캔버스에서 함께 쓴다.
+   캔버스에 붙여 놓은 한 장(Sticker)만 캔버스 파일에 남는다. */
+
+/** 보관함에 담긴 그림 한 장. 파일은 앱 데이터 폴더의 `stickers/` 에 있다. */
+export interface StickerAsset {
+  id: string
+  name: string
+  file: string
+  naturalW: number
+  naturalH: number
+}
+
+/** 캔버스 위에 붙여 놓은 스티커 한 장. */
+export interface Sticker {
+  id: string
+  assetId: string
+  /** 붙어 있는 노트. null 이면 캔버스 배경 위에 그냥 놓인 것. */
+  noteId: string | null
+  /** 스티커 **중심**의 자리. 배경 위면 월드 좌표, 노트에 붙어 있으면 그 노트 좌상단 기준 상대 좌표.
+   *  중심을 기준으로 잡아야 돌리고 키울 때 자리가 밀리지 않는다. */
+  x: number
+  y: number
+  /** 기본 크기 대비 배율 */
+  scale: number
+  /** 시계 방향 각도(도) */
+  rotation: number
+  /** 노트보다 앞에 그릴지. 노트에 붙이면 참이 기본값이다. */
+  front: boolean
+}
+
+/** 캔버스에 처음 놓을 때 긴 변의 길이(월드 단위). */
+export const STICKER_BASE_PX = 160
+export const STICKER_MIN_SCALE = 0.15
+export const STICKER_MAX_SCALE = 6
+/** 보관함에 담을 때 이보다 큰 그림은 줄여서 담는다. 원본을 그대로 두면 파일만 무거워진다. */
+export const STICKER_MAX_PX = 512
+/** 이보다 큰 파일은 받지 않는다. */
+export const STICKER_MAX_BYTES = 4 * 1024 * 1024
+
 export const CANVAS_VERSION = 1
 
 /** 캔버스 하나 = 사용자가 고른 자리에 놓인 파일 하나.
@@ -98,6 +138,8 @@ export interface CanvasDoc {
   name: string
   notes: Note[]
   viewport: Viewport
+  /** 꾸미기로 붙여 놓은 스티커. 옛 파일에는 없다. */
+  stickers?: Sticker[]
 }
 
 /** 열려 있는 캔버스 한 칸. 실제 내용은 path 가 가리키는 파일에 있다. */

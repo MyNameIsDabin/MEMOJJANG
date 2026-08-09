@@ -1,0 +1,104 @@
+/* 우클릭으로 뜨는 스티커 서랍. 이모티콘 고르듯 그림만 늘어놓는다. */
+
+.stpicker {
+  position: fixed;
+  z-index: 400;
+  width: 264px;
+  max-width: calc(100vw - 12px);
+  padding: 6px;
+  background: var(--face);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.stpicker__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.stpicker__tile {
+  position: relative;
+}
+
+.stpicker__pick {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 3px;
+  background: var(--face-2);
+  border: 2px solid;
+  border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+  border-radius: 0;
+  color: var(--text-dim);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.stpicker__pick:hover {
+  border-color: var(--sel);
+}
+
+.stpicker__pick img {
+  max-width: 100%;
+  max-height: 100%;
+  image-rendering: pixelated;
+}
+
+/* 지우기 단추는 그 칸에 마우스를 얹었을 때만. 늘 떠 있으면 그림을 가린다. */
+.stpicker__drop {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: none;
+  place-items: center;
+  padding: 1px;
+  background: var(--face);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.stpicker__tile:hover .stpicker__drop {
+  display: grid;
+}
+
+.stpicker__drop:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.stpicker__empty {
+  margin: 0 0 6px;
+  padding: 6px 4px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.stpicker__add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.stpicker__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 4px;
+  background: var(--face-2);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  border-radius: 0;
+  outline: none;
+  font: inherit;
+}
+
+.stpicker__more {
+  width: 100%;
+  margin-top: 6px;
+}
