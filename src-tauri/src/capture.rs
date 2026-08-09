@@ -209,11 +209,12 @@ pub fn crop_capture(x: i32, y: i32, width: i32, height: i32) -> Result<String, S
         return Err("고른 자리가 화면 밖입니다.".into());
     }
 
-    let mut out = Vec::with_capacity((w * h * 4) as usize);
+    // 화면이 아주 넓으면 i32 로 곱하다 넘칠 수 있다. 자리 계산은 usize 로 한다.
+    let stride = frame.width as usize * 4;
+    let mut out = Vec::with_capacity(w as usize * h as usize * 4);
     for row in top..bottom {
-        let from = ((row * frame.width + left) * 4) as usize;
-        let to = from + (w * 4) as usize;
-        out.extend_from_slice(&frame.bytes[from..to]);
+        let from = row as usize * stride + left as usize * 4;
+        out.extend_from_slice(&frame.bytes[from..from + w as usize * 4]);
     }
 
     let png = encode(&out, w as u32, h as u32, image::ImageFormat::Png)?;

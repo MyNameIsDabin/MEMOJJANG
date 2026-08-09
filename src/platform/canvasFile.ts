@@ -17,8 +17,21 @@ export function assetsDirOf(canvasPath: string): string {
   return `${canvasPath.replace(/\.json$/i, '')}.assets`
 }
 
+/** 그림 이름이 `.assets` 폴더 안을 벗어나지 못하게 막는다.
+ *
+ *  캔버스 파일은 남에게 받을 수 있는 물건이다. 이름에 `..\..\` 같은 것이 들어 있으면
+ *  그 경로가 그대로 파일 명령으로 넘어가는데, 노트를 지울 때 딸린 그림도 함께 지우므로
+ *  **엉뚱한 파일이 지워질 수 있다.** 우리가 짓는 이름은 언제나 평범한 파일명 하나뿐이라
+ *  여기서 잘라 내도 잃는 것이 없다. */
+function safeKey(key: string): string {
+  if (!key || key.includes('/') || key.includes('\\') || key.split(/[/\\]/).includes('..')) {
+    throw new Error(`그림 이름이 올바르지 않습니다: ${key}`)
+  }
+  return key
+}
+
 export function imagePathOf(canvasPath: string, key: string): string {
-  return joinPath(assetsDirOf(canvasPath), key)
+  return joinPath(assetsDirOf(canvasPath), safeKey(key))
 }
 
 export function emptyCanvas(name: string): CanvasDoc {
@@ -139,7 +152,13 @@ export async function saveCanvasImage(
 }
 
 export async function canvasImageUrl(canvasPath: string, key: string): Promise<string | null> {
-  const target = imagePathOf(canvasPath, key)
+  // 이름이 이상하면 없는 그림으로 다룬다 — 노트는 "찾을 수 없습니다" 를 보여 주면 된다.
+  let target: string
+  try {
+    target = imagePathOf(canvasPath, key)
+  } catch {
+    return null
+  }
   const cached = urlCache.get(target)
   if (cached) return cached
 
@@ -152,7 +171,13 @@ export async function canvasImageUrl(canvasPath: string, key: string): Promise<s
 }
 
 export async function deleteCanvasImage(canvasPath: string, key: string): Promise<void> {
-  const target = imagePathOf(canvasPath, key)
+  // 우리가 만든 이름이 아니면 손대지 않는다. 여기가 남의 파일을 지울 수 있는 유일한 길이다.
+  let target: string
+  try {
+    target = imagePathOf(canvasPath, key)
+  } catch {
+    return
+  }
   const cached = urlCache.get(target)
   if (cached?.startsWith('blob:')) URL.revokeObjectURL(cached)
   urlCache.delete(target)

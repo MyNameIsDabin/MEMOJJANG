@@ -122,6 +122,12 @@ export async function addStickerAsset(name: string): Promise<StickerAsset | null
   }
 }
 
+/** 꾸러미에 적힌 크기를 쓸 만한 값으로 가둔다. */
+function size(value: unknown): number {
+  const n = typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : 0
+  return Math.min(4096, Math.max(1, n || 128))
+}
+
 /** 고른 스티커들을 꾸러미 파일 하나로 내보낸다. 저장을 취소하면 false. */
 export async function exportStickerPack(assets: StickerAsset[]): Promise<boolean> {
   if (!isTauri()) throw new Error('앱에서만 내보낼 수 있습니다.')
@@ -203,10 +209,11 @@ export async function importStickerPack(): Promise<StickerAsset[]> {
     urlCache.set(file, URL.createObjectURL(new Blob([bytes as BlobPart], { type: item.mime })))
     added.push({
       id: newId(),
-      name: (item.name ?? '').trim() || '스티커',
+      name: (item.name ?? '').trim().slice(0, 40) || '스티커',
       file,
-      naturalW: item.naturalW || 128,
-      naturalH: item.naturalH || 128,
+      // 남이 만든 꾸러미의 숫자다. 말도 안 되는 값이 들어오면 화면 계산이 통째로 어그러진다.
+      naturalW: size(item.naturalW),
+      naturalH: size(item.naturalH),
     })
   }
 
