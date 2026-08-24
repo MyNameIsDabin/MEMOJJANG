@@ -31,15 +31,19 @@ Pick a view in the info bar under each memo: plain, markdown, code, JSON or HTML
 JSON gets indented and colored — keys, strings, numbers, `true`/`false`/`null` each their own color.
 You can also let the app work it out from what you pasted.
 
+Markdown you edit **in place.** Only the line your caret sits on falls back to its raw source; leave the line and it is drawn again at once.
+Enter inside a list carries the marker to the next item, and pressing it again on an empty item steps out of the list.
+
 ![JSON, HTML and markdown memos each drawn in their own form](docs/views.png)
 
-### Deadlines in three rows of buttons
+### Deadlines like an alarm timer
 
-Hover a to-do item and a clock button appears. Hit a minute/hour/day preset or type a date,
-and the right side of the row picks up a countdown and a progress bar — `4 days left`, `20 minutes left`.
-Drag the handle on the left to reorder.
+Hover a to-do item and a clock button appears. **Type hours, minutes and seconds, hit Start**, and it
+counts from there. You can overrun a unit — `90` minutes is simply added as an hour and a half. For a
+deadline that needs a date, type it in the box below. Either way the right side of the row picks up a
+countdown and a progress bar — `4 days left`, `20 minutes left`. Drag the handle on the left to reorder.
 
-![The deadline popup on a to-do item — 5/15/30 minute, 1/2/3 hour and 1/3/7 day presets](docs/due.png)
+![The deadline popup on a to-do item — an hour/minute/second timer and a date box](docs/due.png)
 
 ### Notes go wherever you right-click
 
@@ -74,6 +78,7 @@ Whatever folded away still works from the `⋯` menu.
 ## What it does
 
 - **Several canvases** — one canvas is one file. Put them wherever you want and switch with the tabs up top. Split work from personal, or keep one per project.
+  The **`+`** at the end of the tab strip asks whether to make a new one, find one in a folder, or pick from the **ones you opened recently** — that's how a closed tab comes back.
 - **Infinite canvas** — `Ctrl`+wheel to zoom around the cursor, drag empty space or wheel-drag to move.
   Near 100% and 200% it snaps a little so pixels stay crisp.
   **The bare wheel never touches the view** — so that scrolling a long memo to its end can't drag the canvas along or make the zoom jump. Moving the view is left to dragging alone.
@@ -125,10 +130,13 @@ Whatever folded away still works from the `⋯` menu.
 - **Languages** — 한국어 · English · 日本語, switched at the top of the settings. Because the font is Galmuri,
   only languages its glyphs cover are offered for now; one more dictionary file adds another ([`src/i18n/`](src/i18n/)).
 - **Global shortcut** — `Ctrl+Shift+Space` by default. Summons Memojjang from any program and hides it when pressed again. Set your own combination in the settings by pressing it.
+- **Capture from anywhere** — `Shift+PrintScreen` by default. Press it while you're in another program and **that** screen is what gets frozen — the Memojjang window only comes up afterwards. Configurable too.
+  Turn on **Hide the window before capturing** in the settings and Memojjang ducks out of the way first. Off by default — sometimes you want the board in the shot.
 - **A classic pixel font** — [Galmuri11](https://github.com/quiple/galmuri) by default, with Galmuri9 / 14 / Mono / system font in the settings.
 - **Three themes** — Night (default) · Day · Classic (that old teal desktop). **Edit colors** in the settings lets you change
   the canvas ground, note faces, shadows, window frame and so on one at a time (with opacity where it makes sense), and reset any of them.
 - **Lives in the tray · always on top** — closing leaves it in the tray, and it can be pinned above other windows.
+- **Start with the computer** — comes up in the tray without opening a window. **Off by default**; turn it on in the settings.
 - **Clipboard collecting** — piles up everything you copy onto the board. It's handy, but it's **off by default** for privacy.
 
 ## Shortcuts
@@ -136,6 +144,7 @@ Whatever folded away still works from the `⋯` menu.
 | Key | What it does |
 | --- | --- |
 | `Ctrl+Shift+Space` | Summon / hide Memojjang **from anywhere** (configurable) |
+| `Shift+PrintScreen` | Start a screen capture **from anywhere** (configurable) |
 | `Ctrl+1` `Ctrl+2` `Ctrl+3` | Add a to-do · memo · links note |
 | `Ctrl+V` | Paste at the cursor (images become image notes) |
 | `Ctrl+F` | Search the board — press again to close (`Enter` in the panel does the same) |
@@ -200,8 +209,11 @@ src/
     effects.ts          autosave and settings propagation (side effects outside the stores)
   canvas/Board.tsx      the infinite canvas — pan/zoom/grid/marquee selection
   notes/                NoteShell (the shared frame) + four bodies, one per kind
+    Markdown.tsx        the small markdown renderer — every piece carries its source line
+    LiveMarkdown.tsx    editing in place — only the caret's line falls back to source
     detect.ts           guessing a view from pasted text (built-in rules + your own)
   actions/
+    capture.ts          starting a capture — same path from the menu and the shortcut
     paste.ts            pasting (the paste event · reading the clipboard directly)
     search.ts           searching inside the board
     layout.ts           flying to a note, fitting everything, tidying onto the grid
@@ -217,14 +229,16 @@ src/
     Toolbar.tsx         the icon toolbar + folding into ⋯ when narrow
     useOverflow.ts      the hook that measures how many fit
     CanvasTabs.tsx      the canvas tab strip
+    confirm.ts          the shared "are you sure" popup for things that can't be undone
     ThemeEditor.tsx     editing colors one at a time and resetting them
     MemoRules.tsx       managing the view-detection rules
 src-tauri/src/
   lib.rs                plugin registration, close behavior, commands
-  files.rs              reading and writing files at arbitrary paths (outside the fs plugin's scope)
+  files.rs              reading, writing and listing at arbitrary paths (outside the fs plugin's scope)
   net.rs                fetching site icons
   capture.rs            freezing the desktop and cutting out the chosen part
   tray.rs               the tray icon and its menu
+  autostart.rs          starting with the computer (the registry Run key)
   hotkey.rs             registering the global shortcut and pulling the window forward
   clipboard_watch.rs    the clipboard watching thread
 ```
@@ -249,6 +263,10 @@ My board.mjb.assets/   pasted images (created only once there is an image)
 
 Images stay out of the body because of autosave. Every save rewrites the whole file, and with even a few
 pictures inside that would mean writing megabytes each time. The trade-off: **when you move a canvas file, move its `.assets` folder with it.**
+
+Deleting an image note does **not** delete the picture file on the spot — `Ctrl+Z` has to bring the
+picture back along with the note. Pictures nothing points at any more are cleared out together the
+**next time you open that canvas.**
 
 Only the app's own state stays in `%APPDATA%\com.memojjang.app\`:
 

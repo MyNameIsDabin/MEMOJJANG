@@ -5,22 +5,10 @@ import { useUi } from '../store/uiStore'
 import { addImageFromFile, pasteFromClipboard } from '../actions/paste'
 import { arrangeGrid, zoomToFit } from '../actions/layout'
 import { copyNotes } from '../actions/clip'
-import { beginCapture } from '../platform/capture'
+import { startCapture } from '../actions/capture'
 import { isTauri } from '../platform/env'
-import { describeError, notify } from './toast'
-import { t, useT } from '../i18n'
+import { useT } from '../i18n'
 import './menu.css'
-
-/** 화면을 얼려 놓고 캡처 화면으로 넘어간다. 창을 넓히는 일은 Rust 가 맡는다. */
-async function startCapture(world: { x: number; y: number }): Promise<void> {
-  try {
-    const shot = await beginCapture()
-    useUi.getState().startCapture(shot, world)
-  } catch (err) {
-    console.error('[capture] 시작 실패', err)
-    notify(t('toast.captureFailed', { reason: describeError(err) }), 'error')
-  }
-}
 
 export interface MenuAnchor {
   screenX: number

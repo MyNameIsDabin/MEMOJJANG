@@ -22,6 +22,26 @@ export async function setGlobalHotkey(accelerator: string | null): Promise<void>
   await invoke('set_global_hotkey', { accelerator })
 }
 
+/** 캡처를 시작하는 전역 단축키. null 이면 끈다. */
+export async function setCaptureHotkey(accelerator: string | null): Promise<void> {
+  if (!isTauri()) return
+  const { invoke } = await import('@tauri-apps/api/core')
+  await invoke('set_capture_hotkey', { accelerator })
+}
+
+/** 로그인할 때 함께 뜨는가. 정본은 레지스트리라 설정 파일이 아니라 여기에 물어본다. */
+export async function getAutostart(): Promise<boolean> {
+  if (!isTauri()) return false
+  const { invoke } = await import('@tauri-apps/api/core')
+  return invoke<boolean>('get_autostart')
+}
+
+export async function setAutostart(on: boolean): Promise<void> {
+  if (!isTauri()) return
+  const { invoke } = await import('@tauri-apps/api/core')
+  await invoke('set_autostart', { enabled: on })
+}
+
 /** 클립보드 감시 스레드를 켜고 끈다. */
 export async function setClipboardWatch(on: boolean): Promise<void> {
   if (!isTauri()) return

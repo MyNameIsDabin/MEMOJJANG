@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import { ACCENTS } from '../types'
 import { hostOf } from '../utils/url'
+import { FitImage, useCanvasScale } from '../ui/FitImage'
 
 function candidates(host: string): string[] {
   return [`https://${host}/favicon.ico`, `https://${host}/apple-touch-icon.png`]
@@ -22,6 +23,7 @@ function accentFor(host: string): string {
 export function Favicon({ url, label }: { url: string; label: string }) {
   const host = hostOf(url)
   const [attempt, setAttempt] = useState(0)
+  const zoom = useCanvasScale()
 
   // 주소를 고치면 처음부터 다시 찾아본다.
   useEffect(() => setAttempt(0), [host])
@@ -42,11 +44,12 @@ export function Favicon({ url, label }: { url: string; label: string }) {
   }
 
   return (
-    <img
+    <FitImage
       className="favicon"
       src={sources[attempt]}
       alt=""
       draggable={false}
+      scale={zoom}
       onError={() => setAttempt((n) => n + 1)}
     />
   )

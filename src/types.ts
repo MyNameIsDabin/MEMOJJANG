@@ -220,6 +220,19 @@ export interface CanvasRef {
   name: string
 }
 
+/** 최근에 열었던 캔버스 한 자리.
+ *  탭을 닫아도 여기 남아, 폴더를 다시 뒤지지 않고 되찾을 수 있다.
+ *  경로만 들고 있으므로 그새 파일이 옮겨졌을 수 있다 — 여는 쪽에서 감당한다. */
+export interface RecentCanvas {
+  path: string
+  name: string
+  /** 마지막으로 연 때 (epoch ms). 목록 차례를 정하는 데만 쓴다. */
+  at: number
+}
+
+/** 최근 기록은 이만큼만 남긴다. 더 쌓아 두면 메뉴가 목록이 되어 버린다. */
+export const RECENT_LIMIT = 10
+
 export const WORKSPACE_VERSION = 1
 
 /** 어떤 캔버스들을 열어 뒀는지 — 앱 데이터 폴더에 남는 앱 자신의 상태다. */
@@ -227,6 +240,9 @@ export interface Workspace {
   version: number
   canvases: CanvasRef[]
   activeId: string | null
+  /** 없을 수도 있다 — 이 항목이 생기기 전에 저장된 파일이 그렇다.
+   *  더하기만 했으므로 판올림 번호는 그대로 둔다. 옛 앱이 읽어도 이 줄만 못 본 척한다. */
+  recent?: RecentCanvas[]
 }
 
 /** 캔버스 파일 확장자. 두 겹인 이유는 탐색기에서 한눈에 알아보게 하려고. */

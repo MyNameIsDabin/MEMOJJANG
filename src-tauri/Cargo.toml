@@ -47,4 +47,6 @@ windows-sys = { version = "0.59", features = [
   "Win32_System_Threading",
   # 바탕화면 영역 캡처 — BitBlt 로 화면을 떠 온다 (capture.rs 참고)
   "Win32_Graphics_Gdi",
+  # 로그인할 때 함께 뜨게 하기 — HKCU 의 Run 키에 값 하나를 둔다 (autostart.rs 참고)
+  "Win32_System_Registry",
 ] }

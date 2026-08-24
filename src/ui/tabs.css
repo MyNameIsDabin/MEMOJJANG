@@ -46,6 +46,29 @@
   cursor: default;
 }
 
+/* 더하기 단추에서 내려오는 메뉴. 제목 표시줄 위로 올라와야 하므로 켜를 한 칸 더 올린다. */
+.tabs__menu {
+  min-width: 240px;
+  z-index: 600;
+}
+
+.tabs__menuhead {
+  padding: 3px 8px;
+  color: var(--text-dim);
+}
+
+.tabs__menunone {
+  padding: 3px 8px 5px;
+  color: var(--text-dim);
+}
+
+/* 이름이 길면 줄이 늘어나는 대신 잘라 낸다. 전체 경로는 툴팁에 있다. */
+.tabs__menuname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── 탭 하나 ───────────────────────────────────────────────────────── */
 
 .tab {

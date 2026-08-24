@@ -19,7 +19,6 @@ import {
   type StickerAnchor,
   type Viewport,
 } from '../types'
-import { deleteImage } from '../platform/assets'
 import { useSettings } from './settingsStore'
 import { detectView } from '../notes/detect'
 import { t } from '../i18n'
@@ -356,12 +355,9 @@ export const useBoard = create<BoardState>()((set, get) => {
     removeNotes: (ids) => {
       if (!ids.length) return
       get().commit()
-      const { notes } = get()
-      // 딸린 이미지 파일도 같이 지운다. 실패해도 노트 삭제는 진행한다.
-      for (const id of ids) {
-        const n = notes[id]
-        if (n?.kind === 'image') void deleteImage(n.file)
-      }
+      /* 딸린 그림 파일은 **여기서 지우지 않는다.** 바로 지우면 Ctrl+Z 로 노트는 돌아와도
+         그림이 없어 "찾을 수 없습니다" 만 남는다. 아무도 가리키지 않게 된 그림은
+         캔버스를 다시 화면에 올릴 때 sweepCanvasImages 가 치운다. */
       set((s) => {
         const next = { ...s.notes }
         for (const id of ids) delete next[id]

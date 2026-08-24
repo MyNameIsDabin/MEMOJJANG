@@ -100,6 +100,13 @@ export interface Settings {
   /** 어디서든 메모짱을 부르는 조합. null 이면 끈 것.
    *  Tauri 가 알아듣는 형식이다 — 예: "CommandOrControl+Shift+Space" */
   globalHotkey: string | null
+  /** 화면 캡처를 시작하는 조합. null 이면 끈 것.
+   *  창을 부르는 것과 따로 두는 이유는, 다른 프로그램을 쓰다 바로 찍고 싶을 때가
+   *  메모짱을 불러내고 싶을 때와 다르기 때문이다. */
+  captureHotkey: string | null
+  /** 캡처하기 전에 메모짱 창을 잠깐 감출지.
+   *  끄면 메모짱까지 함께 찍힌다 — 그걸 원할 때가 있어 기본은 끔이다. */
+  hideOnCapture: boolean
   /** 테마마다 직접 고친 색. 손대지 않은 색은 여기 없고 기본값을 따른다. */
   themeColors: Partial<Record<ThemeKey, Partial<Palette>>>
 
@@ -118,6 +125,8 @@ export interface Settings {
 }
 
 export const DEFAULT_HOTKEY = 'CommandOrControl+Shift+Space'
+/** 캡처는 화면을 찍는 글쇠 바로 옆에 두는 편이 손에 익는다. */
+export const DEFAULT_CAPTURE_HOTKEY = 'Shift+PrintScreen'
 
 /** 저장 형식은 크로스플랫폼이라 길다. 화면에는 짧게 보여 준다. */
 export function formatAccelerator(accelerator: string): string {
@@ -138,6 +147,8 @@ export const DEFAULT_SETTINGS: Settings = {
   minimizeToTray: true,
   clipboardWatch: false,
   globalHotkey: DEFAULT_HOTKEY,
+  captureHotkey: DEFAULT_CAPTURE_HOTKEY,
+  hideOnCapture: false,
   themeColors: {},
   memoAutoDetect: true,
   memoDisabledBuiltins: [],
@@ -197,7 +208,8 @@ export function isThemeColorChanged(key: keyof Palette): boolean {
 
 export function pickSettings(s: SettingsState): Settings {
   const { locale, font, fontScale, theme, showGrid, snapToGrid } = s
-  const { alwaysOnTop, minimizeToTray, clipboardWatch, globalHotkey, themeColors } = s
+  const { alwaysOnTop, minimizeToTray, clipboardWatch, globalHotkey, captureHotkey } = s
+  const { hideOnCapture, themeColors } = s
   const { memoAutoDetect, memoDisabledBuiltins, memoUserRules, userFonts, stickerAssets } = s
   return {
     locale,
@@ -210,6 +222,8 @@ export function pickSettings(s: SettingsState): Settings {
     minimizeToTray,
     clipboardWatch,
     globalHotkey,
+    captureHotkey,
+    hideOnCapture,
     themeColors,
     memoAutoDetect,
     memoDisabledBuiltins,

@@ -19,6 +19,7 @@ import { anchorFactors, useBoard, worldOf } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import { useUi } from '../store/uiStore'
 import { stickerUrl } from '../platform/stickers'
+import { FitImage, useCanvasScale } from '../ui/FitImage'
 import './sticker.css'
 
 /** 기본 크기 — 긴 변이 STICKER_BASE_PX 가 되도록 맞춘다. */
@@ -149,6 +150,7 @@ function StickerView({ id, layer }: { id: string; layer: StickerLayerName }) {
   const active = useUi((s) => s.activeStickerId === id)
   const url = useStickerUrl(asset?.file)
   const handlers = useStickerDrag(id)
+  const zoom = useCanvasScale()
 
   // 자기 켜가 아니면 그리지 않는다. '본문 밑' 은 노트가 직접 그린다(NoteShell).
   if (!sticker || !asset || layerOf(sticker) !== layer) return null
@@ -172,11 +174,12 @@ function StickerView({ id, layer }: { id: string; layer: StickerLayerName }) {
       {...handlers}
     >
       {url ? (
-        <img
+        <FitImage
           className="sticker__img"
           src={url}
           alt={asset.name}
           draggable={false}
+          scale={zoom * sticker.scale}
           style={paintOf(sticker)}
         />
       ) : (
@@ -238,6 +241,7 @@ function NoteSticker({
   box: { w: number; h: number }
 }) {
   const url = useStickerUrl(asset?.file)
+  const zoom = useCanvasScale()
   const active = useUi((s) => s.activeStickerId === sticker.id)
   const decorating = useUi((s) => s.decorating)
   const handlers = useStickerDrag(sticker.id)
@@ -258,7 +262,14 @@ function NoteSticker({
       }}
       {...handlers}
     >
-      <img className="sticker__img" src={url} alt="" draggable={false} style={paintOf(sticker)} />
+      <FitImage
+        className="sticker__img"
+        src={url}
+        alt=""
+        draggable={false}
+        scale={zoom * sticker.scale}
+        style={paintOf(sticker)}
+      />
     </div>
   )
 }

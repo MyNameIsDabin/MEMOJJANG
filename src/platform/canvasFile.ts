@@ -21,9 +21,8 @@ export function assetsDirOf(canvasPath: string): string {
 /** 그림 이름이 `.assets` 폴더 안을 벗어나지 못하게 막는다.
  *
  *  캔버스 파일은 남에게 받을 수 있는 물건이다. 이름에 `..\..\` 같은 것이 들어 있으면
- *  그 경로가 그대로 파일 명령으로 넘어가는데, 노트를 지울 때 딸린 그림도 함께 지우므로
- *  **엉뚱한 파일이 지워질 수 있다.** 우리가 짓는 이름은 언제나 평범한 파일명 하나뿐이라
- *  여기서 잘라 내도 잃는 것이 없다. */
+ *  그 경로가 그대로 파일 명령으로 넘어가고, **엉뚱한 자리의 파일을 읽거나 덮어쓸 수 있다.**
+ *  우리가 짓는 이름은 언제나 평범한 파일명 하나뿐이라 여기서 잘라 내도 잃는 것이 없다. */
 function safeKey(key: string): string {
   if (!key || key.includes('/') || key.includes('\\') || key.split(/[/\\]/).includes('..')) {
     throw new Error(t('err.badImageName', { key }))
@@ -171,18 +170,31 @@ export async function canvasImageUrl(canvasPath: string, key: string): Promise<s
   return url
 }
 
-export async function deleteCanvasImage(canvasPath: string, key: string): Promise<void> {
-  // 우리가 만든 이름이 아니면 손대지 않는다. 여기가 남의 파일을 지울 수 있는 유일한 길이다.
-  let target: string
-  try {
-    target = imagePathOf(canvasPath, key)
-  } catch {
-    return
+/** 우리가 지은 그림 이름인가 — `mf3k2x-a91b7c.png` 꼴.
+ *
+ *  청소기가 지울 수 있는 것을 여기로 좁힌다. `.assets` 폴더에 사용자가 손수 넣어 둔 파일이
+ *  있을 수도 있는데, 그것까지 지우면 남의 물건을 버리는 셈이다. */
+const OUR_IMAGE = /^[0-9a-z]+-[0-9a-z]{6}\.(png|jpe?g|gif|webp)$/i
+
+/** 아무 노트도 가리키지 않는 그림 파일을 치운다.
+ *
+ *  노트를 지울 때 그림까지 바로 지우면 Ctrl+Z 로 노트는 돌아와도 그림이 없다.
+ *  그래서 지우는 일을 **캔버스를 화면에 올리는 순간**으로 미룬다 — 그때는 되돌리기 기록이
+ *  막 비워진 참이라, 남아 있는 고아 파일은 정말로 아무도 찾지 않는 것이다.
+ *  앱이 갑자기 꺼져 남은 것까지 다음에 열 때 함께 치워진다. */
+export async function sweepCanvasImages(canvasPath: string, doc: CanvasDoc): Promise<void> {
+  const keep = new Set(doc.notes.filter((n) => n.kind === 'image').map((n) => n.file))
+  const dir = assetsDirOf(canvasPath)
+
+  const names = await files.list(dir).catch(() => [] as string[])
+  for (const name of names) {
+    if (keep.has(name) || !OUR_IMAGE.test(name)) continue
+    const target = joinPath(dir, name)
+    const cached = urlCache.get(target)
+    if (cached?.startsWith('blob:')) URL.revokeObjectURL(cached)
+    urlCache.delete(target)
+    await files.remove(target).catch(() => {})
   }
-  const cached = urlCache.get(target)
-  if (cached?.startsWith('blob:')) URL.revokeObjectURL(cached)
-  urlCache.delete(target)
-  await files.remove(target).catch(() => {})
 }
 
 /** 캔버스를 닫을 때 그 캔버스의 URL 들을 놓아준다. 오래 켜 두면 쌓이기 때문이다. */

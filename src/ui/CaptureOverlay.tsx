@@ -7,7 +7,7 @@
  *  컴퓨터에서 이걸 빠뜨리면 고른 자리보다 2/3 만큼만 잘린다. */
 import { useEffect, useRef, useState } from 'react'
 import { useSettings } from '../store/settingsStore'
-import { cropShot, endCapture, type Shot } from '../platform/capture'
+import { cropShot, endCapture, expandCapture, type Shot } from '../platform/capture'
 import { addImageBlob } from '../actions/paste'
 import { describeError, notify } from './toast'
 import { useT } from '../i18n'
@@ -45,6 +45,22 @@ export function CaptureOverlay({
     URL.revokeObjectURL(shot.url)
     onDone()
   }
+
+/* 얼린 그림을 다 그린 **뒤에** 창을 화면 전체로 넓힌다. 먼저 넓히면 그리기 전의
+     보드가 화면 가득 늘어난 채로 한 번 번쩍인다 (begin_capture 쪽 설명 참고).
+
+     rAF 를 두 번 겹치는 이유: 첫 번째 콜백은 아직 칠하기 **전**에 불린다.
+     한 번 더 미뤄야 화면에 실제로 그림이 올라온 뒤가 된다. */
+  useEffect(() => {
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => void expandCapture())
+    })
+    return () => {
+      cancelAnimationFrame(outer)
+      cancelAnimationFrame(inner)
+    }
+  }, [])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

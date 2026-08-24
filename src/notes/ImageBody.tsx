@@ -9,9 +9,12 @@ import { imageUrl } from '../platform/assets'
 import { copyImageFromUrl } from '../platform/clipboard'
 import { Icon } from '../ui/Icon'
 import { useT } from '../i18n'
+import { FitImage, useCanvasScale } from '../ui/FitImage'
 
 export function ImageBody({ note }: { note: ImageNote }) {
   const say = useT()
+  // 캔버스를 줄여 놓으면 같은 그림도 더 작게 그려진다. 부드럽게 할지 정할 때 함께 센다.
+  const zoom = useCanvasScale()
   const [url, setUrl] = useState<string | null>(null)
   const [missing, setMissing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -134,7 +137,7 @@ export function ImageBody({ note }: { note: ImageNote }) {
             {say('image.missingHint')}
           </div>
         ) : url ? (
-          <img src={url} alt={note.title} draggable={false} />
+          <FitImage src={url} alt={note.title} draggable={false} scale={zoom} />
         ) : null}
 
         {/* viewBox 가 원본 픽셀이고 meet 이라, 밑에 깔린 object-fit: contain 그림과 자리가 정확히 겹친다. */}

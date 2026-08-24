@@ -9,7 +9,7 @@ import type { MemoNote, MemoView } from '../types'
 import { useBoard } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import { VIEW_LABEL, detectView } from './detect'
-import { Markdown } from './Markdown'
+import { LiveMarkdown } from './LiveMarkdown'
 import { HtmlPreview } from './HtmlPreview'
 import { JsonView } from './JsonView'
 import { Icon } from '../ui/Icon'
@@ -62,10 +62,12 @@ export function MemoBody({ note }: { note: MemoNote }) {
     setEditing(false)
   }
 
-  // 코드는 고정폭으로 보여주기만 하면 되므로 고쳐 쓰는 칸 그대로 둔다.
-  // 나머지는 그려서 보여주므로 고치려면 잠시 원문으로 돌아가야 한다.
-  const rendered = view === 'markdown' || view === 'html' || view === 'json'
-  const showSource = !rendered || editing
+  // 마크다운은 그려 둔 채로 고친다 — 캐럿이 놓인 줄만 원문이 드러난다(LiveMarkdown).
+  // 그래서 원문 칸으로 통째로 돌아가는 것은 연필 단추를 눌렀을 때뿐이다.
+  const live = view === 'markdown'
+  // JSON·HTML 은 그려서 보여주기만 하므로, 고치려면 잠시 원문으로 돌아가야 한다.
+  const rendered = view === 'html' || view === 'json'
+  const showSource = (!rendered && !live) || editing
 
   return (
     <div className="memo">
@@ -84,11 +86,15 @@ export function MemoBody({ note }: { note: MemoNote }) {
           onBlur={(e) => {
             // 잠깐 원문으로 들어온 것뿐이니, 노트 밖으로 손을 옮기면 다시 그려서 보여준다.
             // 아래 정보줄의 단추로 옮겨간 것이라면 그대로 둔다 — 그쪽이 알아서 처리한다.
-            if (!rendered) return
+            if (!rendered && !live) return
             const note = e.currentTarget.closest('.note')
             if (!note?.contains(e.relatedTarget as Node | null)) setEditing(false)
           }}
         />
+      ) : live ? (
+        <div className="memo__rendered">
+          <LiveMarkdown text={note.body} onChange={onChange} />
+        </div>
       ) : (
         <div
           className="memo__rendered"
@@ -98,7 +104,6 @@ export function MemoBody({ note }: { note: MemoNote }) {
           onDoubleClick={() => setEditing(true)}
           title={say('memo.editHint')}
         >
-          {view === 'markdown' && <Markdown text={note.body} />}
           {view === 'json' && <JsonView text={note.body} />}
           {view === 'html' && <HtmlPreview html={note.body} />}
         </div>
@@ -119,7 +124,7 @@ export function MemoBody({ note }: { note: MemoNote }) {
           ))}
         </select>
 
-        {rendered && (
+        {(rendered || live) && (
           <button
             type="button"
             className="memo__act"

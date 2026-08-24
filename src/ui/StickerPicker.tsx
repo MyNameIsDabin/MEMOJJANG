@@ -19,6 +19,7 @@ import { isTauri } from '../platform/env'
 import { useStickerUrl } from '../canvas/StickerLayer'
 import { notify } from './toast'
 import { Icon } from './Icon'
+import { FitImage } from './FitImage'
 import { t, useT } from '../i18n'
 import './stickerpicker.css'
 
@@ -246,7 +247,7 @@ function Tile({
         title={picking ? say('stickers.pick', { name: asset.name }) : asset.name}
         onClick={onPick}
       >
-        {url ? <img src={url} alt={asset.name} draggable={false} /> : <span>{asset.name}</span>}
+        {url ? <FitImage src={url} alt={asset.name} draggable={false} /> : <span>{asset.name}</span>}
         {chosen && <span className="stpicker__check">✔</span>}
       </button>
       {/* 고르는 중에는 지우기 단추를 숨긴다 — 내보내려다 지우는 사고를 막는다. */}

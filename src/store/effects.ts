@@ -4,7 +4,13 @@ import { useBoard } from './boardStore'
 import { saveActiveCanvas, useCanvases } from './canvasStore'
 import { applySettings, pickSettings, useSettings, type Settings } from './settingsStore'
 import { storage } from '../platform/storage'
-import { setAlwaysOnTop, setClipboardWatch, setCloseToTray, setGlobalHotkey } from '../platform/window'
+import {
+  setAlwaysOnTop,
+  setCaptureHotkey,
+  setClipboardWatch,
+  setCloseToTray,
+  setGlobalHotkey,
+} from '../platform/window'
 import { describeError, notify } from '../ui/toast'
 import { t } from '../i18n'
 
@@ -72,6 +78,12 @@ export function startSettingsEffects(): () => void {
     if (first || next.globalHotkey !== prev?.globalHotkey) {
       setGlobalHotkey(next.globalHotkey).catch((err) => {
         console.error('[hotkey] 등록 실패', err)
+        notify(t('canvas.hotkeyFailed', { reason: describeError(err) }), 'error')
+      })
+    }
+    if (first || next.captureHotkey !== prev?.captureHotkey) {
+      setCaptureHotkey(next.captureHotkey).catch((err) => {
+        console.error('[hotkey] 캡처 단축키 등록 실패', err)
         notify(t('canvas.hotkeyFailed', { reason: describeError(err) }), 'error')
       })
     }

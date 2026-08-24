@@ -35,8 +35,6 @@
 .sticker {
   position: absolute;
   transform-origin: 50% 50%;
-  /* 도트 그림이 많으므로 확대해도 뭉개지지 않게 둔다. */
-  image-rendering: pixelated;
 }
 
 /* 꾸미는 중에만 잡힌다. 평소에는 그냥 그림이라 노트를 가리지 않는다. */

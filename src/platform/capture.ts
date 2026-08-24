@@ -19,15 +19,27 @@ async function call<T>(command: string, args: Record<string, unknown>): Promise<
   return invoke<T>(command, args)
 }
 
-/** 창을 숨겨 찍고, 그 그림을 덮어 그릴 수 있도록 창을 화면 전체로 넓힌다. */
-export async function beginCapture(): Promise<Shot> {
+/** 화면을 얼려 두고, 그 그림을 덮어 그릴 수 있도록 창을 화면 전체로 넓힌다.
+ *  `hideWindow` 가 참이면 찍기 전에 메모짱 창을 잠깐 감춘다 — 뒤에 있던 것을 담고 싶을 때다. */
+export async function beginCapture(hideWindow: boolean): Promise<Shot> {
   if (!isTauri()) throw new Error(t('err.appOnlyCapture'))
-  const shot = await call<{ preview: string; width: number; height: number }>('begin_capture', {})
+  const shot = await call<{ preview: string; width: number; height: number }>('begin_capture', {
+    hideWindow,
+  })
   return {
     url: URL.createObjectURL(base64ToBlob(shot.preview, 'image/jpeg')),
     width: shot.width,
     height: shot.height,
   }
+}
+
+/** 얼린 그림을 다 그렸으니 창을 화면 전체로 넓혀도 된다고 알린다.
+ *
+ *  begin_capture 가 곧바로 넓히지 않는 이유는 그쪽 설명 참고 — 요약하면,
+ *  넓힌 창에 평소의 보드가 한 번 비치는 것을 막기 위해서다. */
+export async function expandCapture(): Promise<void> {
+  if (!isTauri()) return
+  await call('expand_capture', {}).catch(() => {})
 }
 
 /** 창을 원래 자리로 되돌린다. 어떤 경우에도 반드시 불러야 한다. */

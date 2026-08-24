@@ -385,7 +385,6 @@
   width: calc(16px * var(--ui-scale));
   height: calc(16px * var(--ui-scale));
   object-fit: contain;
-  image-rendering: pixelated;
 }
 
 /* 아이콘을 못 찾았을 때 대신 세우는 글자 타일 */
@@ -495,14 +494,47 @@
   box-shadow: 3px 3px 0 var(--shadow);
 }
 
-.duepop__quick {
+/* 시 · 분 · 초 + 시작. 한 줄에 다 들어가야 알람 시계처럼 읽힌다. */
+.duepop__timer {
   display: flex;
+  align-items: flex-end;
   gap: 3px;
 }
 
-.duepop__chip {
-  padding: 2px 5px;
+.duepop__unit {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.duepop__num {
+  /* 세 자리까지는 편하게 — 90 분처럼 단위를 넘겨 적는 것을 막지 않는다. */
+  width: 3.5em;
+  padding: 2px 4px;
+  background: var(--face-2);
+  color: var(--text);
+  border-radius: 0;
+  outline: none;
+  text-align: right;
+  /* 화살표 단추는 칸을 좁히기만 한다. 숫자는 그냥 친다. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.duepop__num::-webkit-outer-spin-button,
+.duepop__num::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.duepop__unitname {
+  color: var(--text-dim);
+}
+
+.duepop__start {
   min-height: 0;
+  padding: 2px 8px;
 }
 
 .duepop__input {
@@ -685,6 +717,41 @@
   line-height: 1.6;
 }
 
+/* 그려 둔 채로 고치는 마크다운. 어디를 눌러도 그 자리에 캐럿이 놓이므로 글칸처럼 보여야 한다. */
+.md__live {
+  min-height: 100%;
+  cursor: text;
+}
+
+/* 지금 고치고 있는 줄. 둘러싼 제목·목록의 글자 모양을 그대로 물려받아야
+   원문이 드러나는 순간 줄이 튀지 않는다. */
+.md__raw {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  line-height: inherit;
+  outline: none;
+  resize: none;
+  /* 높이는 글 길이에 맞춰 코드가 잡아 준다. 여기서 굴리게 두면 줄이 잘려 보인다. */
+  overflow: hidden;
+}
+
+/* 표·코드 블록처럼, 문법을 감추면 오히려 고칠 수 없는 자리 */
+.md__source {
+  font-family: 'GalmuriMono11', monospace;
+  white-space: pre-wrap;
+}
+
+.md__empty {
+  margin: 0;
+  color: var(--text-dim);
+}
+
 .md > :first-child {
   margin-top: 0;
 }
@@ -822,8 +889,6 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  /* 도트 그림을 확대해도 뭉개지지 않게 */
-  image-rendering: pixelated;
   -webkit-user-drag: none;
 }
 

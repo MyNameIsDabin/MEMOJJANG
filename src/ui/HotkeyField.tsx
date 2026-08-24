@@ -1,7 +1,7 @@
 /** 전역 단축키를 직접 눌러서 정하는 칸.
  *  조합을 글자로 적게 하는 것보다, 그냥 눌러 보게 하는 편이 훨씬 덜 헷갈린다. */
 import { useEffect, useState } from 'react'
-import { DEFAULT_HOTKEY, formatAccelerator } from '../store/settingsStore'
+import { formatAccelerator } from '../store/settingsStore'
 import { useT } from '../i18n'
 
 /** e.code 를 Tauri 가 알아듣는 키 이름으로 옮긴다. */
@@ -33,6 +33,7 @@ function keyName(code: string): string | null {
     PageDown: 'PageDown',
     Insert: 'Insert',
     Delete: 'Delete',
+    PrintScreen: 'PrintScreen',
   }
   return named[code] ?? null
 }
@@ -55,9 +56,12 @@ function toAccelerator(e: React.KeyboardEvent): string | null {
 export function HotkeyField({
   value,
   onChange,
+  fallback,
 }: {
   value: string | null
   onChange: (accelerator: string | null) => void
+  /** '기본값' 단추가 되돌릴 자리. 단축키마다 다르다. */
+  fallback: string
 }) {
   const [capturing, setCapturing] = useState(false)
   const [hint, setHint] = useState<string | null>(null)
@@ -85,6 +89,12 @@ export function HotkeyField({
     setCapturing(false)
   }
 
+  /* PrintScreen 은 keydown 이 오지 않는다 — 운영체제가 먼저 가로채고 뗄 때만 흘려 준다.
+     그래서 이 글쇠 하나만 keyup 으로도 받는다. 나머지는 여기서 아무 일도 하지 않는다. */
+  const onKeyUp = (e: React.KeyboardEvent) => {
+    if (e.code === 'PrintScreen') onKeyDown(e)
+  }
+
   return (
     <div className="hotkey">
       <button
@@ -93,11 +103,12 @@ export function HotkeyField({
         onClick={() => setCapturing(true)}
         onBlur={() => setCapturing(false)}
         onKeyDown={capturing ? onKeyDown : undefined}
+        onKeyUp={capturing ? onKeyUp : undefined}
       >
         {capturing ? t('hotkey.press') : value ? formatAccelerator(value) : t('hotkey.off')}
       </button>
 
-      <button type="button" className="btn" onClick={() => onChange(DEFAULT_HOTKEY)} disabled={value === DEFAULT_HOTKEY}>
+      <button type="button" className="btn" onClick={() => onChange(fallback)} disabled={value === fallback}>
         {t('hotkey.default')}
       </button>
       <button type="button" className="btn" onClick={() => onChange(null)} disabled={value === null}>

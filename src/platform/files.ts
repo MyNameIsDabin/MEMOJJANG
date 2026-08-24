@@ -51,6 +51,23 @@ export const files = {
     return localStorage.getItem(LS_PREFIX + path) !== null
   },
 
+  /** 폴더 안의 파일 이름들. 없는 폴더는 빈 목록.
+   *  브라우저 모드에는 폴더가 없다 — 흉내 낸 이름표에서 앞자리가 맞는 것만 추린다. */
+  async list(dir: string): Promise<string[]> {
+    if (isTauri()) return call<string[]>('list_dir', { path: dir })
+    // 구분자까지 맞춰 봐야 한다. 앞자리만 보면 `보드.assets2\...` 가 `보드.assets` 것으로 딸려 온다.
+    const prefix = `${LS_PREFIX}${dir}${separatorOf(dir)}`
+    const names: string[] = []
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i)
+      if (!key?.startsWith(prefix)) continue
+      const rest = key.slice(prefix.length)
+      // 한 겹 아래의 것만. 폴더 안의 폴더는 파일이 아니다.
+      if (rest && !/[\\/]/.test(rest)) names.push(rest)
+    }
+    return names
+  },
+
   /** 파일이든 폴더든 옮긴다. */
   async rename(from: string, to: string): Promise<void> {
     if (isTauri()) return call('rename_path', { from, to })

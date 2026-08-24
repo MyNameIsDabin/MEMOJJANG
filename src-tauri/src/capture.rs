@@ -143,11 +143,40 @@ fn encode(bytes: &[u8], width: u32, height: u32, format: image::ImageFormat) -> 
     Ok(out.into_inner())
 }
 
+/// 창을 숨긴 뒤 화면이 실제로 다시 그려질 때까지 기다리는 시간.
+///
+/// `hide()` 는 부탁일 뿐 그 자리에서 끝나지 않는다. 창이 사라진 자리를 바탕화면과 뒤에 있던
+/// 창들이 다시 그려야 하고, 그건 다음 몇 프레임에 걸쳐 일어난다. 곧바로 찍으면 메모짱이
+/// 있던 자리가 검게 남거나 지워지다 만 모습으로 찍힌다.
+#[cfg(windows)]
+const HIDE_SETTLE_MS: u64 = 140;
+
 /// 화면을 찍어 얼려 두고, 그 그림을 덮어 그릴 수 있도록 창을 가상 화면 전체로 넓힌다.
+///
+/// `hide_window` 가 참이면 찍기 전에 메모짱 창을 잠깐 감춘다 — 뒤에 있던 것을 담고 싶을 때다.
+/// 거짓이면 그대로 둔다. 잠깐 사라졌다 나타나는 것이 눈에 거슬리기도 하고,
+/// 메모짱까지 함께 담고 싶을 때도 있어서 고를 수 있게 두었다.
 #[tauri::command]
-pub fn begin_capture(window: tauri::Window) -> Result<Shot, String> {
+pub fn begin_capture(window: tauri::Window, hide_window: bool) -> Result<Shot, String> {
+    /* 최소화된 창은 자리와 크기를 물어봐도 쓸 수 없는 값이 나온다 — 윈도우는 화면 밖 저 멀리를
+       가리키는 (-32000, -32000) 같은 것을 준다. 그대로 "돌아갈 자리" 로 기억해 두면 캡처가 끝난
+       뒤 창이 보이지 않는 곳에, 보이지 않을 만큼 작게 돌아온다.
+       그래서 재기 전에 먼저 편다. 편 창이 화면에 비쳐 사진에 찍히지 않도록 곧바로 감춘다. */
+    let minimized = window.is_minimized().unwrap_or(false);
+    if minimized {
+        let _ = window.unminimize();
+    }
+
+    // 감출 이유는 둘이다 — 사용자가 그렇게 골랐거나, 방금 편 창이 화면에 나타났거나.
+    if hide_window || minimized {
+        let _ = window.hide();
+        #[cfg(windows)]
+        std::thread::sleep(std::time::Duration::from_millis(HIDE_SETTLE_MS));
+    }
+
     // set_size 는 **안쪽** 크기를 정하므로 잴 때도 안쪽으로 재야 한다.
     // 바깥 크기를 재어 두고 그대로 되돌리면 테두리만큼 창이 조금씩 커진다.
+    // (감춰진 창도 자리와 크기는 제대로 답한다. 최소화된 창만 그러지 못한다.)
     let previous = (
         window.outer_position().map_err(|e| e.to_string())?,
         window.inner_size().map_err(|e| e.to_string())?,
@@ -155,6 +184,8 @@ pub fn begin_capture(window: tauri::Window) -> Result<Shot, String> {
     *PREVIOUS.lock().unwrap() = Some(previous);
 
     let restore = |window: &tauri::Window| {
+        // 감춰 놓고 실패했을 수도 있다. 창이 사라진 채로 두면 앱이 죽은 것처럼 보인다.
+        let _ = window.show();
         let _ = window.set_position(previous.0);
         let _ = window.set_size(previous.1);
         let _ = window.set_focus();
@@ -180,16 +211,45 @@ pub fn begin_capture(window: tauri::Window) -> Result<Shot, String> {
 
     *FRAME.lock().unwrap() = Some(Frame { bytes, width, height });
 
-    let _ = window.set_always_on_top(true);
-    let _ = window.set_position(PhysicalPosition::new(x, y));
-    let _ = window.set_size(PhysicalSize::new(width as u32, height as u32));
-    let _ = window.set_focus();
+    /* 여기서는 창을 넓히지 **않는다.** 넓히는 일은 프론트가 얼린 그림을 다 그린 뒤에
+       expand_capture 로 한다. 순서를 이렇게 잡은 이유:
+
+       넓히는 것과 얼린 그림이 깔리는 것 사이에는 프론트가 한 번 그릴 틈이 있다. 그동안 창이
+       보이면 평소의 보드가 화면 가득 늘어난 채로 번쩍이고, 모니터가 여러 대면 가상 화면의
+       원점이 음수라 창이 엉뚱한 데로 튀는 것처럼도 보인다.
+
+       그렇다고 넓히는 동안 감춰 둘 수도 없다. 감춰진 창은 브라우저가 화면을 칠하지 않아
+       "다 그렸다" 는 신호 자체가 오지 않는다. 그래서 감추는 대신 **아직 넓히지 않는다.**
+
+       감췄던 창이라면 여기서 제자리에 도로 띄운다. 화면은 이미 떠 왔으므로 사진에는 없다. */
+    let _ = window.show();
 
     Ok(Shot {
         preview: base64::engine::general_purpose::STANDARD.encode(preview),
         width,
         height,
     })
+}
+
+/// 얼린 그림을 다 그렸으니 이제 창을 화면 전체로 넓혀도 된다고 프론트가 알려 온다.
+///
+/// begin_capture 에서 곧바로 넓히지 않는 이유는 그쪽 설명 참고.
+#[tauri::command]
+pub fn expand_capture(window: tauri::Window) -> Result<(), String> {
+    let (x, y, width, height) = win::virtual_screen();
+
+    let _ = window.set_always_on_top(true);
+    let _ = window.set_position(PhysicalPosition::new(x, y));
+    let _ = window.set_size(PhysicalSize::new(width as u32, height as u32));
+    let _ = window.show();
+    let _ = window.set_focus();
+
+    // 다른 프로그램을 쓰다 불렀다면 이것까지 해야 고르는 화면이 실제로 맨 앞에 선다.
+    #[cfg(windows)]
+    if let Some(main) = tauri::Manager::get_webview_window(&window, "main") {
+        crate::hotkey::bring_to_front(&main);
+    }
+    Ok(())
 }
 
 /// 얼려 둔 원본에서 고른 자리만 오려 낸다. 좌표는 물리 픽셀.
@@ -231,6 +291,8 @@ pub fn end_capture(window: tauri::Window, always_on_top: bool) -> Result<(), Str
         let _ = window.set_position(position);
         let _ = window.set_size(size);
     }
+    // 고르는 화면을 띄우지 못한 채로 끝났을 수도 있다. 창이 감춰진 채 남으면 앱이 사라진 셈이다.
+    let _ = window.show();
     // 캡처 때문에 잠시 올려 뒀던 것을 사용자가 정해 둔 값으로 되돌린다.
     let _ = window.set_always_on_top(always_on_top);
     let _ = window.set_focus();

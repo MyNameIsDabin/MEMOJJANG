@@ -1,0 +1,42 @@
+/* 화면 전체를 덮어 뒤를 잠근다. 토스트보다 위 — 알림 위로 물어보는 일이 생긴다. */
+.confirm__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--shadow) 55%, transparent);
+}
+
+.confirm {
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 40px));
+  padding: 12px;
+  background: var(--face);
+  color: var(--text);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+
+.confirm__message {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.confirm__detail {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+/* 지우는 단추만 빨갛게. 색만으로 알리지 않도록 단추에 무엇을 하는지도 적는다. */
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+}

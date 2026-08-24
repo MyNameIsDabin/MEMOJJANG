@@ -83,36 +83,29 @@ export function suggestedDue(now: number): number {
   return d.getTime()
 }
 
-/** 지금부터 얼마 뒤로 잡을지. 짧은 마감을 자주 쓰므로 분 단위부터 갖춘다. */
-export interface DuePreset {
-  labelKey: MessageKey
-  n: number
-  offset: number
+/* ── 타이머 ─────────────────────────────────────────────────────────
+   마감은 결국 시각 하나지만, 사람이 자주 하는 말은 "지금부터 얼마 뒤" 다.
+   그래서 알람 시계와 같은 방식으로 시·분·초만 받아 지금 시각에 더한다.        */
+
+export interface TimerParts {
+  h: number
+  m: number
+  s: number
 }
 
-export const DUE_PRESETS: { unit: string; items: DuePreset[] }[] = [
-  {
-    unit: 'minute',
-    items: [
-      { labelKey: 'due.minutes', n: 5, offset: 5 * MINUTE },
-      { labelKey: 'due.minutes', n: 15, offset: 15 * MINUTE },
-      { labelKey: 'due.minutes', n: 30, offset: 30 * MINUTE },
-    ],
-  },
-  {
-    unit: 'hour',
-    items: [
-      { labelKey: 'due.hours', n: 1, offset: HOUR },
-      { labelKey: 'due.hours', n: 2, offset: 2 * HOUR },
-      { labelKey: 'due.hours', n: 3, offset: 3 * HOUR },
-    ],
-  },
-  {
-    unit: 'day',
-    items: [
-      { labelKey: 'due.days', n: 1, offset: DAY },
-      { labelKey: 'due.days', n: 3, offset: 3 * DAY },
-      { labelKey: 'due.days', n: 7, offset: 7 * DAY },
-    ],
-  },
-]
+/** 시·분·초를 밀리초로. 셋 다 0 이면 정할 것이 없으므로 null. */
+export function fromTimerParts({ h, m, s }: TimerParts): number | null {
+  const total = h * HOUR + m * MINUTE + s * SECOND
+  return total > 0 ? total : null
+}
+
+/** 남은 시간을 시·분·초로 가른다. 이미 지났으면 0.
+ *  초 단위로 올림하는 이유는 describeDue 와 같다 — 방금 넣은 값이 그대로 다시 읽혀야 한다. */
+export function toTimerParts(ms: number): TimerParts {
+  const total = Math.max(0, Math.ceil(ms / SECOND) * SECOND)
+  return {
+    h: Math.floor(total / HOUR),
+    m: Math.floor((total % HOUR) / MINUTE),
+    s: Math.floor((total % MINUTE) / SECOND),
+  }
+}

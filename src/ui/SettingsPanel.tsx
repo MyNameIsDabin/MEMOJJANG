@@ -1,6 +1,13 @@
 /** 설정 창. 고전 대화상자처럼 생겼고, 값은 바꾸는 즉시 반영·저장된다(확인 버튼 없음). */
 import { useEffect, useState } from 'react'
-import { SCALE_OPTIONS, fontOptions, useSettings, type Settings } from '../store/settingsStore'
+import {
+  DEFAULT_CAPTURE_HOTKEY,
+  DEFAULT_HOTKEY,
+  SCALE_OPTIONS,
+  fontOptions,
+  useSettings,
+  type Settings,
+} from '../store/settingsStore'
 import { THEME_OPTIONS } from '../theme/palette'
 import { ThemeEditor } from './ThemeEditor'
 import { MemoRules } from './MemoRules'
@@ -9,6 +16,8 @@ import { UpdateSection } from './UpdateSection'
 import { useCanvases } from '../store/canvasStore'
 import { storage } from '../platform/storage'
 import { isTauri } from '../platform/env'
+import { getAutostart, setAutostart } from '../platform/window'
+import { describeError, notify } from './toast'
 import { HotkeyField } from './HotkeyField'
 import { LOCALES, useT } from '../i18n'
 import './settings.css'
@@ -166,16 +175,38 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               onChange={(v) => set('minimizeToTray', v)}
               note={say('settings.trayNote')}
             />
+            <AutostartCheck />
           </Section>
 
           <Section title={say('settings.hotkey')}>
             <p className="settings__note">
               {say('settings.hotkeyNote')}
             </p>
-            <HotkeyField value={s.globalHotkey} onChange={(v) => set('globalHotkey', v)} />
+            <HotkeyField
+              value={s.globalHotkey}
+              fallback={DEFAULT_HOTKEY}
+              onChange={(v) => set('globalHotkey', v)}
+            />
+
+            <p className="settings__note">{say('settings.captureHotkeyNote')}</p>
+            <HotkeyField
+              value={s.captureHotkey}
+              fallback={DEFAULT_CAPTURE_HOTKEY}
+              onChange={(v) => set('captureHotkey', v)}
+            />
+
             {!isTauri() && (
               <p className="settings__note">{say('settings.hotkeyBrowser')}</p>
             )}
+          </Section>
+
+          <Section title={say('settings.capture')}>
+            <Check
+              label={say('settings.hideOnCapture')}
+              checked={s.hideOnCapture}
+              onChange={(v) => set('hideOnCapture', v)}
+              note={say('settings.hideOnCaptureNote')}
+            />
           </Section>
 
           <Section title={say('settings.clipboard')}>
@@ -264,6 +295,45 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
       <span>{label}</span>
       {children}
     </div>
+  )
+}
+
+/** 로그인할 때 함께 뜨게 하기.
+ *
+ *  다른 설정과 달리 설정 파일에 두지 않는다. 정본은 레지스트리이고, 사용자가 작업 관리자의
+ *  '시작 프로그램' 에서 직접 꺼 버릴 수도 있다. 두 곳에 적어 두면 그때부터 어긋난다.
+ *  그래서 열 때마다 실제 상태를 물어보고, 고치는 것도 그쪽에만 한다. */
+function AutostartCheck() {
+  const say = useT()
+  const [on, setOn] = useState(false)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    void getAutostart().then((value) => {
+      if (!alive) return
+      setOn(value)
+      setReady(true)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const toggle = (next: boolean) => {
+    // 먼저 화면을 바꿔 두면 실패했을 때 켜진 것처럼 보인다. 레지스트리가 받아 준 뒤에 옮긴다.
+    setAutostart(next)
+      .then(() => setOn(next))
+      .catch((err) => notify(say('settings.autostartFailed', { reason: describeError(err) }), 'error'))
+  }
+
+  return (
+    <Check
+      label={say('settings.autostart')}
+      checked={on}
+      onChange={toggle}
+      note={ready ? say('settings.autostartNote') : say('settings.autostartChecking')}
+    />
   )
 }
 

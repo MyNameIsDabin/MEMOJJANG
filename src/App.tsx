@@ -9,12 +9,14 @@ import { NoteStage } from './ui/NoteStage'
 import { StickerBar } from './ui/StickerBar'
 import { CaptureOverlay } from './ui/CaptureOverlay'
 import { Toasts } from './ui/Toasts'
+import { ConfirmDialog } from './ui/ConfirmDialog'
 import { useT } from './i18n'
 import { useBoard } from './store/boardStore'
 import { useCanvases } from './store/canvasStore'
 import { useUi } from './store/uiStore'
 import { loadSettings } from './store/settingsStore'
 import { startBoardAutosave, startSettingsEffects } from './store/effects'
+import { listenForCaptureHotkey } from './actions/capture'
 import { useShortcuts } from './hooks/useShortcuts'
 import { useClipboardWatch } from './hooks/useClipboardWatch'
 import { useChromeMetrics } from './hooks/useChromeMetrics'
@@ -36,6 +38,7 @@ export default function App() {
     // 구독을 먼저 걸어야 아래의 hydrate 가 설정 반영을 놓치지 않는다.
     const stopSettings = startSettingsEffects()
     const stopAutosave = startBoardAutosave()
+    const stopCaptureHotkey = listenForCaptureHotkey()
 
     void (async () => {
       await loadSettings()
@@ -45,6 +48,7 @@ export default function App() {
     return () => {
       stopSettings()
       stopAutosave()
+      stopCaptureHotkey()
     }
   }, [])
 
@@ -79,6 +83,7 @@ export default function App() {
       {searchOpen && <SearchPanel onClose={useUi.getState().closeSearch} />}
       {settingsOpen && <SettingsPanel onClose={useUi.getState().closeSettings} />}
       <Toasts />
+      <ConfirmDialog />
     </>
   )
 }

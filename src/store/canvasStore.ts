@@ -8,12 +8,20 @@ import {
   CANVAS_VERSION,
   WORKSPACE_VERSION,
   newId,
+  RECENT_LIMIT,
   type CanvasDoc,
   type CanvasRef,
+  type RecentCanvas,
 } from '../types'
 import { useBoard } from './boardStore'
 import { storage } from '../platform/storage'
-import { emptyCanvas, readCanvas, releaseCanvasImages, writeCanvas } from '../platform/canvasFile'
+import {
+  emptyCanvas,
+  readCanvas,
+  releaseCanvasImages,
+  sweepCanvasImages,
+  writeCanvas,
+} from '../platform/canvasFile'
 import { baseName, dirName, files, joinPath, stemOf } from '../platform/files'
 import { isTauri } from '../platform/env'
 import { describeError, notify } from '../ui/toast'
@@ -22,6 +30,8 @@ import { t } from '../i18n'
 interface CanvasState {
   canvases: CanvasRef[]
   activeId: string | null
+  /** 최근에 열었던 것들. 지금 열려 있는 것도 들어 있다 — 걸러 내는 일은 보여 주는 쪽이 한다. */
+  recent: RecentCanvas[]
   hydrated: boolean
   /** 파일을 읽고 쓰는 동안 탭을 잠근다. 연타로 두 캔버스가 섞이는 것을 막는다. */
   busy: boolean
@@ -32,6 +42,10 @@ interface CanvasState {
   hydrate: () => Promise<void>
   createCanvas: () => Promise<void>
   openCanvas: () => Promise<void>
+  /** 최근 기록에서 고른 것을 연다. 이미 열려 있으면 그 탭으로 간다. */
+  openRecent: (path: string) => Promise<void>
+  forgetRecent: (path: string) => void
+  clearRecent: () => void
   switchTo: (id: string) => Promise<void>
   closeCanvas: (id: string) => Promise<void>
   renameCanvas: (id: string, name: string) => void
@@ -52,9 +66,9 @@ export async function saveActiveCanvas(): Promise<void> {
 }
 
 async function persistWorkspace(): Promise<void> {
-  const { canvases, activeId } = useCanvases.getState()
+  const { canvases, activeId, recent } = useCanvases.getState()
   await storage
-    .saveWorkspace({ version: WORKSPACE_VERSION, canvases, activeId })
+    .saveWorkspace({ version: WORKSPACE_VERSION, canvases, activeId, recent })
     .catch((err) => console.error('[canvas] 작업공간 저장 실패', err))
 }
 
@@ -118,6 +132,11 @@ async function askOpenPath(): Promise<string | null> {
   return typeof picked === 'string' ? picked : null
 }
 
+/** 최근 목록 맨 앞에 하나를 올린다. 같은 파일은 한 자리만 차지한다. */
+function remember(list: RecentCanvas[], entry: RecentCanvas): RecentCanvas[] {
+  return [entry, ...list.filter((r) => r.path !== entry.path)].slice(0, RECENT_LIMIT)
+}
+
 /** 사용자가 확장자를 지운 채로 저장하는 일이 흔하다. 조용히 붙여 준다. */
 function withExtension(path: string): string {
   return /\.json$/i.test(path) ? path : `${path}.${CANVAS_EXT}`
@@ -137,9 +156,20 @@ export const useCanvases = create<CanvasState>()((set, get) => {
       }
       useBoard.getState().hydrate(doc)
       // 파일 안의 이름이 정본이다. 탭 이름과 어긋나면 파일 쪽을 따른다.
+      const name = doc.name || ref.name
       if (doc.name && doc.name !== ref.name) {
         set((s) => ({ canvases: s.canvases.map((c) => (c.id === ref.id ? { ...c, name: doc.name } : c)) }))
       }
+      // 화면에 올라온 것만 기록한다. 열려다 실패한 것을 최근 목록에 남기면 죽은 줄만 늘어난다.
+      set((s) => ({ recent: remember(s.recent, { path: ref.path, name, at: Date.now() }) }))
+
+      /* 아무도 가리키지 않는 그림을 이제야 치운다. 노트를 지우는 그 자리에서 함께 지우면
+         Ctrl+Z 로 노트만 돌아오고 그림은 못 돌아온다. 방금 hydrate 가 되돌리기 기록을
+         비웠으므로, 지금 남은 고아 파일은 정말로 아무도 찾지 않는 것이다.
+         화면을 막을 이유는 없어 기다리지 않는다. */
+      void sweepCanvasImages(ref.path, doc).catch((err) =>
+        console.error('[canvas] 남은 그림 정리 실패', err),
+      )
       return true
     } catch (err) {
       notify(t('canvas.openFailed', { reason: describeError(err) }), 'error')
@@ -148,9 +178,32 @@ export const useCanvases = create<CanvasState>()((set, get) => {
     }
   }
 
+  /** 경로 하나를 탭으로 올린다. 폴더에서 고른 것도, 최근 기록에서 고른 것도 여기로 모인다. */
+  const openPath = async (path: string): Promise<void> => {
+    const already = get().canvases.find((c) => c.path === path)
+    if (already) {
+      await get().switchTo(already.id)
+      return
+    }
+
+    set({ busy: true })
+    try {
+      await saveActiveCanvas()
+      const ref: CanvasRef = { id: newId(), path, name: stemOf(path) || baseName(path) }
+      set((s) => ({ canvases: [...s.canvases, ref], activeId: ref.id }))
+      await loadInto(ref)
+      await persistWorkspace()
+    } catch (err) {
+      notify(t('canvas.openFailed', { reason: describeError(err) }), 'error')
+    } finally {
+      set({ busy: false })
+    }
+  }
+
   return {
     canvases: [],
     activeId: null,
+    recent: [],
     hydrated: false,
     busy: false,
 
@@ -175,6 +228,7 @@ export const useCanvases = create<CanvasState>()((set, get) => {
       }
 
       const canvases = workspace?.canvases ?? []
+      set({ recent: workspace?.recent ?? [] })
       const activeId = canvases.some((c) => c.id === workspace?.activeId)
         ? (workspace?.activeId ?? null)
         : (canvases[0]?.id ?? null)
@@ -184,6 +238,10 @@ export const useCanvases = create<CanvasState>()((set, get) => {
       const ref = canvases.find((c) => c.id === activeId)
       if (ref) await loadInto(ref)
       else useBoard.getState().hydrate(null)
+
+      // 켤 때 올라온 것도 최근 목록에 넣어 둔다 — 이 기능이 생기기 전부터 열려 있던 캔버스는
+      // 여기서 한 번 적어 주지 않으면 탭을 닫는 순간 되찾을 길이 사라진다.
+      await persistWorkspace()
     },
 
     createCanvas: async () => {
@@ -216,26 +274,29 @@ export const useCanvases = create<CanvasState>()((set, get) => {
     openCanvas: async () => {
       if (get().busy) return
       const path = await askOpenPath()
-      if (!path) return
+      if (path) await openPath(path)
+    },
 
-      const already = get().canvases.find((c) => c.path === path)
-      if (already) {
-        await get().switchTo(already.id)
+    openRecent: async (path) => {
+      if (get().busy) return
+      // 그새 옮겨졌거나 지워진 파일일 수 있다. 빈 탭을 만들어 두느니 기록에서 빼는 편이 낫다.
+      // 확인 자체가 실패하면 있다고 보고 열어 본다 — 판단을 못 했다고 지울 이유는 없다.
+      if (isTauri() && !(await files.exists(path).catch(() => true))) {
+        notify(t('canvas.notFound', { path }), 'error')
+        get().forgetRecent(path)
         return
       }
+      await openPath(path)
+    },
 
-      set({ busy: true })
-      try {
-        await saveActiveCanvas()
-        const ref: CanvasRef = { id: newId(), path, name: stemOf(path) || baseName(path) }
-        set((s) => ({ canvases: [...s.canvases, ref], activeId: ref.id }))
-        await loadInto(ref)
-        await persistWorkspace()
-      } catch (err) {
-        notify(t('canvas.openFailed', { reason: describeError(err) }), 'error')
-      } finally {
-        set({ busy: false })
-      }
+    forgetRecent: (path) => {
+      set((s) => ({ recent: s.recent.filter((r) => r.path !== path) }))
+      void persistWorkspace()
+    },
+
+    clearRecent: () => {
+      set({ recent: [] })
+      void persistWorkspace()
     },
 
     switchTo: async (id) => {

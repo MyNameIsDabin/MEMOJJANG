@@ -82,6 +82,30 @@ pub fn file_exists(path: String) -> bool {
     Path::new(&path).exists()
 }
 
+/// 폴더 안의 **파일 이름**들. 폴더는 빼고, 안쪽으로 들어가지도 않는다.
+///
+/// 없는 폴더는 빈 목록이다 — 그림을 한 장도 넣지 않은 캔버스에는 `.assets` 가 아예 없고,
+/// 그건 잘못된 상태가 아니다.
+#[tauri::command]
+pub fn list_dir(path: String) -> Result<Vec<String>, String> {
+    let path = PathBuf::from(path);
+    if !path.is_dir() {
+        return Ok(Vec::new());
+    }
+
+    let entries = std::fs::read_dir(&path).map_err(|err| describe(&path, err))?;
+    let mut names = Vec::new();
+    for entry in entries.flatten() {
+        if !entry.file_type().map(|kind| kind.is_file()).unwrap_or(false) {
+            continue;
+        }
+        if let Some(name) = entry.file_name().to_str() {
+            names.push(name.to_string());
+        }
+    }
+    Ok(names)
+}
+
 /// 파일이든 폴더든 옮긴다. 예전 판에서 쓰던 그림 폴더를 새 자리로 데려올 때 쓴다.
 #[tauri::command]
 pub fn rename_path(from: String, to: String) -> Result<(), String> {

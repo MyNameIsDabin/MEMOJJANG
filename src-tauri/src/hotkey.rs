@@ -7,10 +7,16 @@ use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 pub const DEFAULT_ACCELERATOR: &str = "CommandOrControl+Shift+Space";
+pub const DEFAULT_CAPTURE_ACCELERATOR: &str = "Shift+PrintScreen";
+
+/// 캡처 단축키가 눌렸음을 프론트에 알리는 이름.
+/// 화면을 찍는 일 자체는 프론트가 `begin_capture` 로 시작한다 — 찍은 뒤에 고르는 화면을
+/// 띄우고 노트를 만드는 흐름이 전부 그쪽에 있기 때문이다.
+pub const CAPTURE_EVENT: &str = "hotkey://capture";
 
 /// 창이 지금 앞에 있는지.
 ///
@@ -23,13 +29,32 @@ pub fn note_focus_changed(focused: bool) {
     FOCUSED.store(focused, Ordering::Relaxed);
 }
 
-/// 지금 등록되어 있는 단축키. 새로 걸기 전에 이전 것을 풀어야 하므로 들고 있는다.
-static CURRENT: Mutex<Option<Shortcut>> = Mutex::new(None);
+/// 지금 등록되어 있는 단축키들. 새로 걸기 전에 이전 것을 풀어야 하므로 들고 있는다.
+/// 둘은 서로 다른 자리라, 하나를 바꿔도 다른 하나는 건드리지 않는다.
+static CURRENT_TOGGLE: Mutex<Option<Shortcut>> = Mutex::new(None);
+static CURRENT_CAPTURE: Mutex<Option<Shortcut>> = Mutex::new(None);
 
-/// `None` 을 주면 단축키를 끈다.
+/// 창을 불러내고 숨기는 단축키. `None` 을 주면 끈다.
 pub fn apply<R: Runtime>(app: &AppHandle<R>, accelerator: Option<&str>) -> Result<(), String> {
+    bind(app, &CURRENT_TOGGLE, accelerator, |app| toggle(app))
+}
+
+/// 캡처를 시작하는 단축키. `None` 을 주면 끈다.
+pub fn apply_capture<R: Runtime>(app: &AppHandle<R>, accelerator: Option<&str>) -> Result<(), String> {
+    bind(app, &CURRENT_CAPTURE, accelerator, |app| {
+        let _ = app.emit(CAPTURE_EVENT, ());
+    })
+}
+
+/// 한 자리에 단축키 하나를 건다. 이전에 걸려 있던 것은 먼저 풀어 준다.
+fn bind<R: Runtime>(
+    app: &AppHandle<R>,
+    slot: &Mutex<Option<Shortcut>>,
+    accelerator: Option<&str>,
+    run: fn(&AppHandle<R>),
+) -> Result<(), String> {
     let manager = app.global_shortcut();
-    let mut current = CURRENT.lock().map_err(|_| "단축키 상태가 잠겨 있습니다".to_string())?;
+    let mut current = slot.lock().map_err(|_| "단축키 상태가 잠겨 있습니다".to_string())?;
 
     if let Some(previous) = current.take() {
         let _ = manager.unregister(previous);
@@ -43,10 +68,10 @@ pub fn apply<R: Runtime>(app: &AppHandle<R>, accelerator: Option<&str>) -> Resul
         .map_err(|err| format!("'{accelerator}' 를 단축키로 읽지 못했습니다: {err}"))?;
 
     manager
-        .on_shortcut(shortcut, |app, _shortcut, event| {
-            // 누를 때만 반응한다. 뗄 때까지 받으면 한 번에 두 번 토글된다.
+        .on_shortcut(shortcut, move |app, _shortcut, event| {
+            // 누를 때만 반응한다. 뗄 때까지 받으면 한 번에 두 번 돈다.
             if event.state == ShortcutState::Pressed {
-                toggle(app);
+                run(app);
             }
         })
         .map_err(|err| {
@@ -78,6 +103,12 @@ fn toggle<R: Runtime>(app: &AppHandle<R>) {
     // Windows 에서는 이것만으로 모자란다. 아래 설명 참고.
     #[cfg(windows)]
     force_foreground(&window);
+}
+
+/// 창 하나를 맨 앞으로. 핸들을 꺼내는 일까지 여기서 해 준다.
+#[cfg(windows)]
+pub fn bring_to_front<R: Runtime>(window: &tauri::WebviewWindow<R>) {
+    force_foreground(window);
 }
 
 /// 창을 진짜로 맨 앞에 세운다.
