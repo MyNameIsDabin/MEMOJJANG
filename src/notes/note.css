@@ -508,8 +508,9 @@
 }
 
 .duepop__num {
-  /* 세 자리까지는 편하게 — 90 분처럼 단위를 넘겨 적는 것을 막지 않는다. */
-  width: 3.5em;
+  /* 세 자리까지는 들어가되 더 넓히지 않는다. 좁은 노트에서는 이 한 줄이
+     통째로 접혀 '시간' 이 '시 / 간' 으로 갈라진다. */
+  width: 2.8em;
   padding: 2px 4px;
   background: var(--face-2);
   color: var(--text);
@@ -530,6 +531,8 @@
 
 .duepop__unitname {
   color: var(--text-dim);
+  /* 단위 이름은 절대 갈라지지 않는다 — 갈라지면 무슨 단위인지 읽을 수 없다. */
+  white-space: nowrap;
 }
 
 .duepop__start {
