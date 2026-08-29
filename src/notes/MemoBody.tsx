@@ -62,12 +62,13 @@ export function MemoBody({ note }: { note: MemoNote }) {
     setEditing(false)
   }
 
-  // 마크다운은 그려 둔 채로 고친다 — 캐럿이 놓인 줄만 원문이 드러난다(LiveMarkdown).
-  // 그래서 원문 칸으로 통째로 돌아가는 것은 연필 단추를 눌렀을 때뿐이다.
+  /* 마크다운은 그려 둔 채로 고친다 — 캐럿이 놓인 줄만 원문이 드러난다(LiveMarkdown).
+     **따로 원문 모드를 두지 않는다.** 늘 고칠 수 있는데 '고치기' 단추가 또 있으면,
+     그 단추를 눌러야 고쳐지는 줄 알게 된다. */
   const live = view === 'markdown'
   // JSON·HTML 은 그려서 보여주기만 하므로, 고치려면 잠시 원문으로 돌아가야 한다.
   const rendered = view === 'html' || view === 'json'
-  const showSource = (!rendered && !live) || editing
+  const showSource = live ? false : !rendered || editing
 
   return (
     <div className="memo">
@@ -86,7 +87,7 @@ export function MemoBody({ note }: { note: MemoNote }) {
           onBlur={(e) => {
             // 잠깐 원문으로 들어온 것뿐이니, 노트 밖으로 손을 옮기면 다시 그려서 보여준다.
             // 아래 정보줄의 단추로 옮겨간 것이라면 그대로 둔다 — 그쪽이 알아서 처리한다.
-            if (!rendered && !live) return
+            if (!rendered) return
             const note = e.currentTarget.closest('.note')
             if (!note?.contains(e.relatedTarget as Node | null)) setEditing(false)
           }}
@@ -124,7 +125,7 @@ export function MemoBody({ note }: { note: MemoNote }) {
           ))}
         </select>
 
-        {(rendered || live) && (
+        {rendered && (
           <button
             type="button"
             className="memo__act"

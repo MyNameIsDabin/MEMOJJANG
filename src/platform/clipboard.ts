@@ -13,8 +13,11 @@ export async function copyText(text: string): Promise<void> {
 
 /** 이미지 노트를 다시 클립보드로 올린다. url 은 blob: 또는 data: 둘 다 받는다. */
 export async function copyImageFromUrl(url: string): Promise<void> {
-  const blob = await (await fetch(url)).blob()
+  await copyImageBlob(await (await fetch(url)).blob())
+}
 
+/** 그림 한 장을 클립보드에 올린다. */
+export async function copyImageBlob(blob: Blob): Promise<void> {
   if (isTauri()) {
     const { writeImage } = await import('@tauri-apps/plugin-clipboard-manager')
     // 플러그인은 png 바이트를 그대로 받는다 (Cargo 의 image-png 기능 필요).

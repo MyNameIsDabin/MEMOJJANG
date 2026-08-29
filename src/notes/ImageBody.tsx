@@ -6,9 +6,11 @@ import { useEffect, useRef, useState } from 'react'
 import { PEN_COLORS, PEN_SIZES, type ImageNote, type Stroke } from '../types'
 import { imageChromeHeight, useBoard } from '../store/boardStore'
 import { imageUrl } from '../platform/assets'
-import { copyImageFromUrl } from '../platform/clipboard'
+import { copyImageBlob, copyImageFromUrl } from '../platform/clipboard'
+import { flattenImage } from './flatten'
 import { Icon } from '../ui/Icon'
-import { useT } from '../i18n'
+import { describeError, notify } from '../ui/toast'
+import { t, useT } from '../i18n'
 import { FitImage, useCanvasScale } from '../ui/FitImage'
 
 export function ImageBody({ note }: { note: ImageNote }) {
@@ -46,9 +48,19 @@ export function ImageBody({ note }: { note: ImageNote }) {
 
   const onCopy = async () => {
     if (!url) return
-    await copyImageFromUrl(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1200)
+    try {
+      // 덧그린 것이 있으면 그것까지 함께 구워서 내보낸다. 화면에 보이는 것과 같아야 한다.
+      if (strokes.length) {
+        await copyImageBlob(await flattenImage(url, strokes, note.naturalW, note.naturalH))
+      } else {
+        await copyImageFromUrl(url)
+      }
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1200)
+    } catch (err) {
+      console.error('[image] 복사 실패', err)
+      notify(t('toast.copyFailed', { reason: describeError(err) }), 'error')
+    }
   }
 
   /** 원본 비율로 되돌린다. 늘렸다가 찌그러졌을 때 쓴다. */

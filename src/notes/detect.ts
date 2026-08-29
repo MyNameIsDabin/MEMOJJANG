@@ -77,7 +77,7 @@ function scoreMarkdown(text: string): number {
   if (lines.some((l) => /^(-{3,}|\*{3,}|_{3,})\s*$/.test(l))) score += 1
 
   // 머리줄 바로 밑에 구분줄이 오는 표는 다른 무엇으로도 읽히지 않는다.
-  // 이것만으로 마크다운이라 보기에 충분하다 (Markdown.tsx 가 표로 인정하는 조건과 같다).
+  // 이것만으로 마크다운이라 보기에 충분하다.
   const hasTable = lines.some(
     (l, i) => /^\s*\|.+\|\s*$/.test(l) && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1] ?? ''),
   )

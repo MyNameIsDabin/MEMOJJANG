@@ -31,8 +31,9 @@ Pick a view in the info bar under each memo: plain, markdown, code, JSON or HTML
 JSON gets indented and colored — keys, strings, numbers, `true`/`false`/`null` each their own color.
 You can also let the app work it out from what you pasted.
 
-Markdown you edit **in place.** Only the line your caret sits on falls back to its raw source; leave the line and it is drawn again at once.
-Enter inside a list carries the marker to the next item, and pressing it again on an empty item steps out of the list.
+Markdown you edit **in place.** Marks like `#` and `**` are hidden and headings really do grow —
+but put the caret there and the marks come back, because you can't edit what you can't see. There is no separate edit mode.
+Code blocks fold their fences away into one slab; step inside and the fences return.
 
 ![JSON, HTML and markdown memos each drawn in their own form](docs/views.png)
 
@@ -209,8 +210,8 @@ src/
     effects.ts          autosave and settings propagation (side effects outside the stores)
   canvas/Board.tsx      the infinite canvas — pan/zoom/grid/marquee selection
   notes/                NoteShell (the shared frame) + four bodies, one per kind
-    Markdown.tsx        the small markdown renderer — every piece carries its source line
-    LiveMarkdown.tsx    editing in place — only the caret's line falls back to source
+    LiveMarkdown.tsx    the in-place editor (where CodeMirror is mounted)
+    livePreview.ts      the decoration that hides markup and grows headings
     detect.ts           guessing a view from pasted text (built-in rules + your own)
   actions/
     capture.ts          starting a capture — same path from the menu and the shortcut

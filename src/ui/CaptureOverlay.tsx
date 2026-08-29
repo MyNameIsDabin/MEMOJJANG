@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSettings } from '../store/settingsStore'
 import { cropShot, endCapture, expandCapture, type Shot } from '../platform/capture'
 import { addImageBlob } from '../actions/paste'
+import { copyImageBlob } from '../platform/clipboard'
 import { describeError, notify } from './toast'
 import { useT } from '../i18n'
 import './capture.css'
@@ -115,6 +116,11 @@ export function CaptureOverlay({
         w: rect.width * scale,
         h: rect.height * scale,
       })
+      /* 클립보드에도 올려 둔다. 잘라 낸 그림을 곧바로 다른 곳에 붙이고 싶을 때가 많은데,
+         그때마다 노트에서 다시 복사하는 것은 한 걸음이 더 든다.
+         실패해도 노트 만드는 일은 계속한다 — 그쪽이 본래 하려던 일이다. */
+      await copyImageBlob(blob).catch((err) => console.error('[capture] 클립보드 복사 실패', err))
+
       // 노트를 만들기 전에 창부터 되돌린다 — 새 노트가 원래 화면에서 보여야 한다.
       await endCapture(useSettings.getState().alwaysOnTop)
       URL.revokeObjectURL(shot.url)
