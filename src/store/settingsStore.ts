@@ -142,7 +142,8 @@ export const DEFAULT_SETTINGS: Settings = {
   fontScale: 1,
   theme: 'night',
   showGrid: true,
-  snapToGrid: false,
+  // 격자를 보여 주면서 안 맞추면 눈에는 어긋나 보인다. 둘을 같이 켜 둔다.
+  snapToGrid: true,
   alwaysOnTop: false,
   minimizeToTray: true,
   clipboardWatch: false,

@@ -3,6 +3,7 @@ mod autostart;
 #[cfg(desktop)]
 mod capture;
 #[cfg(desktop)]
+mod clipboard_rich;
 mod clipboard_watch;
 mod files;
 #[cfg(desktop)]
@@ -128,6 +129,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             set_close_to_tray,
             set_clipboard_watch,
+            clipboard_rich::copy_note_with_image,
             set_global_hotkey,
             set_capture_hotkey,
             get_autostart,
