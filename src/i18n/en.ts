@@ -461,7 +461,7 @@ export const en: Partial<Messages> = {
   'err.badImageName': 'That image name is not allowed: {key}',
   'err.canvasBroken': "Couldn't read the canvas file (the contents are broken): {reason}",
   'err.notCanvas': 'That is not a canvas file.',
-  'err.dropNotImage': 'not an image',
+  'err.dropNothing': 'Found neither an image nor a link in what you dropped ({types})',
   'err.dropFailed': "Couldn't drop that image — {reason}",
   'err.fetchImage': "Couldn't fetch that image — {reason}",
   'update.dev': 'dev build',

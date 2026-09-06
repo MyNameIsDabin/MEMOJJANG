@@ -461,7 +461,7 @@ export const ja: Partial<Messages> = {
   'err.badImageName': '画像の名前が正しくありません: {key}',
   'err.canvasBroken': 'キャンバスファイルを読めません (中身が壊れています): {reason}',
   'err.notCanvas': 'キャンバスファイルの形ではありません。',
-  'err.dropNotImage': '画像ではありません',
+  'err.dropNothing': '置いたものから画像もリンクも見つかりませんでした ({types})',
   'err.dropFailed': '画像を置けませんでした — {reason}',
   'err.fetchImage': '画像を取り込めませんでした — {reason}',
   'update.dev': '開発中',

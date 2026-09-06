@@ -14,7 +14,8 @@ import { useSnapGhost } from './snapGhost'
 import { useUi } from '../store/uiStore'
 import { handleDrop, shouldHandleDrop } from '../actions/drop'
 import { lastPointer } from './pointer'
-import { useT } from '../i18n'
+import { describeError, notify } from '../ui/toast'
+import { t, useT } from '../i18n'
 import './board.css'
 
 /** 커서 밑에 "그 방향으로 더 굴릴 수 있는" 칸이 있는가.
@@ -82,16 +83,16 @@ export function Board() {
      정말로 바깥으로 나갔을 때만 표시를 거둔다. */
   const dragDepth = useRef(0)
 
+  /* 끄는 동안에는 무엇을 끌고 오는지 들여다볼 수 없다 — 브라우저가 놓기 전까지 내용을 잠근다.
+     그래서 여기서는 가리지 않고 다 받아 주고, 누가 가져갈지는 놓은 뒤에 정한다.
+     여기서 막으면 브라우저가 "여기엔 못 놓는다" 며 drop 을 아예 주지 않는다. */
   const onDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    if (!shouldHandleDrop(e.target)) return
     e.preventDefault()
     dragDepth.current += 1
     setDropping(true)
   }, [])
 
   const onDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    if (!shouldHandleDrop(e.target)) return
-    // 막지 않으면 브라우저가 "여기엔 못 놓는다" 며 drop 을 아예 안 준다.
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
   }, [])
@@ -104,10 +105,15 @@ export function Board() {
   const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     dragDepth.current = 0
     setDropping(false)
-    if (!shouldHandleDrop(e.target)) return
+    // 글을 입력 칸에 떨어뜨린 것이면 손대지 않는다. 막지 않으면 브라우저가 커서 자리에 꽂아 준다.
+    if (!shouldHandleDrop(e.target, e.dataTransfer)) return
     e.preventDefault()
     const world = toWorld(useBoard.getState().viewport, e.clientX, e.clientY)
-    void handleDrop(e.dataTransfer, world)
+    // 붙잡지 않으면 어디서 넘어지든 조용히 끝난다 — "놓았는데 아무 일도 없다" 가 그 모습이다.
+    void handleDrop(e.dataTransfer, world).catch((err) => {
+      console.error('[drop] 놓은 것을 다루지 못했습니다', err)
+      notify(t('err.dropFailed', { reason: describeError(err) }), 'error')
+    })
   }, [])
 
   // 휠은 preventDefault 를 해야 창 전체가 스크롤되지 않는데, React 의 합성 이벤트는

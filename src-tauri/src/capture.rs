@@ -39,7 +39,8 @@ pub struct Shot {
 
 #[cfg(windows)]
 mod win {
-    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::Foundation::{BOOL, HWND};
+    use windows_sys::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_TRANSITIONS_FORCEDISABLED};
     use windows_sys::Win32::Graphics::Gdi::{
         BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetDC,
         GetDIBits, ReleaseDC, SelectObject, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, CAPTUREBLT,
@@ -49,6 +50,25 @@ mod win {
         GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN,
         SM_YVIRTUALSCREEN,
     };
+
+    /// 창을 여닫을 때의 **시늉**(스르륵 나타나고 사라지는 것)을 켜고 끈다.
+    ///
+    /// 캡처 직전에 창을 감출 때 이걸 꺼야 한다. 켜져 있으면 감추라고 한 뒤에도 창이 몇십
+    /// 밀리초 동안 옅어지며 남아 있고, 그 사이에 화면을 뜨면 반투명한 메모짱이 함께 찍힌다.
+    /// 기다리는 시간을 늘려도 되지만, 그만큼 캡처가 굼떠진다.
+    pub fn set_transitions(window: &tauri::Window, enabled: bool) {
+        let Ok(handle) = window.hwnd() else { return };
+        // 0 이 "켠다", 1 이 "끈다" — 속성 이름이 '못 하게 막기' 라서 뜻이 뒤집혀 있다.
+        let disabled: BOOL = if enabled { 0 } else { 1 };
+        unsafe {
+            DwmSetWindowAttribute(
+                handle.0 as HWND,
+                DWMWA_TRANSITIONS_FORCEDISABLED as u32,
+                &disabled as *const BOOL as *const _,
+                std::mem::size_of::<BOOL>() as u32,
+            );
+        }
+    }
 
     pub fn virtual_screen() -> (i32, i32, i32, i32) {
         unsafe {
@@ -120,6 +140,25 @@ mod win {
 
 #[cfg(not(windows))]
 mod win {
+    /// 창을 여닫을 때의 **시늉**(스르륵 나타나고 사라지는 것)을 켜고 끈다.
+    ///
+    /// 캡처 직전에 창을 감출 때 이걸 꺼야 한다. 켜져 있으면 감추라고 한 뒤에도 창이 몇십
+    /// 밀리초 동안 옅어지며 남아 있고, 그 사이에 화면을 뜨면 반투명한 메모짱이 함께 찍힌다.
+    /// 기다리는 시간을 늘려도 되지만, 그만큼 캡처가 굼떠진다.
+    pub fn set_transitions(window: &tauri::Window, enabled: bool) {
+        let Ok(handle) = window.hwnd() else { return };
+        // 0 이 "켠다", 1 이 "끈다" — 속성 이름이 '못 하게 막기' 라서 뜻이 뒤집혀 있다.
+        let disabled: BOOL = if enabled { 0 } else { 1 };
+        unsafe {
+            DwmSetWindowAttribute(
+                handle.0 as HWND,
+                DWMWA_TRANSITIONS_FORCEDISABLED as u32,
+                &disabled as *const BOOL as *const _,
+                std::mem::size_of::<BOOL>() as u32,
+            );
+        }
+    }
+
     pub fn virtual_screen() -> (i32, i32, i32, i32) {
         (0, 0, 0, 0)
     }
@@ -169,6 +208,10 @@ pub fn begin_capture(window: tauri::Window, hide_window: bool) -> Result<Shot, S
 
     // 감출 이유는 둘이다 — 사용자가 그렇게 골랐거나, 방금 편 창이 화면에 나타났거나.
     if hide_window || minimized {
+        /* 그냥 감추면 창이 **서서히** 사라진다 (DWM 의 여닫는 시늉). 그 도중에 찍으면
+           반투명하게 남은 창이 사진에 함께 들어간다. 시늉을 꺼서 단번에 사라지게 한다. */
+        #[cfg(windows)]
+        win::set_transitions(&window, false);
         let _ = window.hide();
         #[cfg(windows)]
         std::thread::sleep(std::time::Duration::from_millis(HIDE_SETTLE_MS));
@@ -186,6 +229,8 @@ pub fn begin_capture(window: tauri::Window, hide_window: bool) -> Result<Shot, S
     let restore = |window: &tauri::Window| {
         // 감춰 놓고 실패했을 수도 있다. 창이 사라진 채로 두면 앱이 죽은 것처럼 보인다.
         let _ = window.show();
+        #[cfg(windows)]
+        win::set_transitions(window, true);
         let _ = window.set_position(previous.0);
         let _ = window.set_size(previous.1);
         let _ = window.set_focus();

@@ -11,9 +11,18 @@ use std::time::Duration;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 
+/// "이건 그림이 아니다" 를 부르는 쪽이 알아볼 표식.
+///
+/// 사람이 읽는 말로 견주면 안 된다 — 여기 말은 한국어로 박혀 있는데 앱은 세 말을 쓰므로,
+/// 영어나 일본어로 쓰는 사람에게는 견주기가 늘 어긋난다. 그러면 링크로 받아 주는 길을
+/// 놓치고 오류만 뜬다.
+pub const NOT_IMAGE: &str = "memojjang/not-image";
+
 /// 실수로 거대한 파일을 물고 오는 일을 막는다.
 const MAX_BYTES: usize = 25 * 1024 * 1024;
 const TIMEOUT: Duration = Duration::from_secs(20);
+const USER_AGENT: &str =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36";
 
 #[derive(serde::Serialize, Debug)]
 pub struct FetchedImage {
@@ -31,6 +40,10 @@ pub fn download_image(url: String) -> Result<FetchedImage, String> {
     let agent = ureq::AgentBuilder::new().timeout(TIMEOUT).build();
     let response = agent
         .get(&url)
+        // 그림을 담아 두는 곳(핀터레스트의 i.pinimg.com 같은)은 브라우저가 아닌 것을 흔히 막는다.
+        // 우리는 사람이 방금 끌어다 놓은 그림 한 장을 가지러 가는 것이므로 브라우저처럼 묻는다.
+        .set("User-Agent", USER_AGENT)
+        .set("Accept", "image/*,*/*;q=0.8")
         .call()
         .map_err(|err| format!("받아오지 못했습니다: {err}"))?;
 
@@ -45,7 +58,7 @@ pub fn download_image(url: String) -> Result<FetchedImage, String> {
 
     if !mime.starts_with("image/") {
         return Err(format!(
-            "그림이 아닙니다 ({})",
+            "{NOT_IMAGE} ({})",
             if mime.is_empty() { "형식을 알 수 없음" } else { &mime }
         ));
     }
@@ -88,7 +101,7 @@ mod tests {
     #[ignore]
     fn rejects_a_page_that_is_not_an_image() {
         let error = download_image("https://example.com/".into()).unwrap_err();
-        assert!(error.contains("그림이 아닙니다"), "예상 밖의 오류: {error}");
+        assert!(error.contains(NOT_IMAGE), "예상 밖의 오류: {error}");
         println!("거절됨: {error}");
     }
 

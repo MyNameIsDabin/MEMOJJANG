@@ -484,7 +484,7 @@ export const ko = {
   'err.badImageName': '그림 이름이 올바르지 않습니다: {key}',
   'err.canvasBroken': '캔버스 파일을 읽을 수 없습니다 (내용이 깨졌습니다): {reason}',
   'err.notCanvas': '캔버스 파일 형식이 아닙니다.',
-  'err.dropNotImage': '그림이 아닙니다',
+  'err.dropNothing': '놓은 것에서 그림도 주소도 찾지 못했습니다 ({types})',
   'err.dropFailed': '그림을 놓지 못했습니다 — {reason}',
   'err.fetchImage': '그림을 받아오지 못했습니다 — {reason}',
   'update.dev': '개발 중',
