@@ -14,7 +14,9 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, placeholder as cmPlaceholder } from '@codemirror/view'
+import { Strikethrough, TaskList } from '@lezer/markdown'
 import { livePreview } from './livePreview'
+import { slashMenu } from './slashMenu'
 import { useT } from '../i18n'
 
 export function LiveMarkdown({ text, onChange }: { text: string; onChange: (next: string) => void }) {
@@ -38,8 +40,10 @@ export function LiveMarkdown({ text, onChange }: { text: string; onChange: (next
         extensions: [
           history(),
           keymap.of([...defaultKeymap, ...historyKeymap]),
-          markdown(),
+          // 할 일(`- [ ]`)과 취소선(`~~`)은 기본 CommonMark 에 없다. 그 둘만 더한다.
+          markdown({ extensions: [TaskList, Strikethrough] }),
           livePreview,
+          slashMenu,
           EditorView.lineWrapping,
           cmPlaceholder(say('memo.placeholder')),
           EditorView.updateListener.of((update) => {

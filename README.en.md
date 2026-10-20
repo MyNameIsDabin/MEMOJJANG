@@ -34,6 +34,8 @@ You can also let the app work it out from what you pasted.
 Markdown you edit **in place.** Marks like `#` and `**` are hidden and headings really do grow —
 but put the caret there and the marks come back, because you can't edit what you can't see. There is no separate edit mode.
 Code blocks fold their fences away into one slab; step inside and the fences return.
+Type **`/`** at the start of a line and a Notion-style menu offers a to-do, headings, lists, a quote, a code block or a divider.
+Keep typing to narrow it down, like `/todo`. To-dos (`- [ ]`) are always drawn as a box you can click to mark done.
 
 ![JSON, HTML and markdown memos each drawn in their own form](docs/views.png)
 
@@ -214,6 +216,7 @@ src/
   notes/                NoteShell (the shared frame) + four bodies, one per kind
     LiveMarkdown.tsx    the in-place editor (where CodeMirror is mounted)
     livePreview.ts      the decoration that hides markup and grows headings
+    slashMenu.ts        the / menu at the start of a line — picks put the markdown in for you
     detect.ts           guessing a view from pasted text (built-in rules + your own)
   actions/
     capture.ts          starting a capture — same path from the menu and the shortcut

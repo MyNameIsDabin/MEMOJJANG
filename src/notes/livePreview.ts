@@ -9,10 +9,14 @@
  *  그래서 여기서 잘못되어도 **모양이 조금 어긋날 뿐, 글이 안 써지지는 않는다.**
  *
  *  ViewPlugin 이 아니라 StateField 인 이유: 코드 울타리 줄은 통째로 접어 없애야 하는데,
- *  그런 **블록** 데코레이션은 플러그인이 낼 수 없고 상태 항목만 낼 수 있다. */
+ *  그런 **블록** 데코레이션은 플러그인이 낼 수 없고 상태 항목만 낼 수 있다.
+ *
+ *  할 일(`- [ ] `)만은 캐럿이 와도 원문을 드러내지 않고 언제나 네모 칸으로 둔다.
+ *  눌러서 끝냄을 표시하는 물건이라, 캐럿이 닿을 때마다 글자로 바뀌면 누를 수가 없다. */
 import { syntaxTree } from '@codemirror/language'
 import { type EditorState, type Range, RangeSetBuilder, StateField } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
+import { t } from '../i18n'
 
 /** 표시 문자를 아예 없는 것처럼 만든다. 지우는 게 아니라 감추는 것뿐이다. */
 const hidden = Decoration.replace({})
@@ -30,6 +34,41 @@ class BulletWidget extends WidgetType {
   eq() {
     return true
   }
+}
+
+/** 할 일 네모 칸. `- [ ] ` 를 통째로 이것으로 바꾼다. */
+class TaskWidget extends WidgetType {
+  constructor(readonly done: boolean) {
+    super()
+  }
+
+  toDOM(view: EditorView) {
+    const box = document.createElement('span')
+    box.className = `cm-md-task${this.done ? ' cm-md-task--done' : ''}`
+    box.textContent = this.done ? '✔' : ''
+    box.title = t('slash.check')
+    // mousedown 에서 막아야 캐럿이 옮겨 가지 않는다 — 누를 때마다 줄이 원문으로 바뀌면 거슬린다.
+    box.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return
+      e.preventDefault()
+      toggleTask(view, view.posAtDOM(box))
+    })
+    return box
+  }
+
+  eq(other: TaskWidget) {
+    return other.done === this.done
+  }
+}
+
+/** pos 가 놓인 줄의 `[ ]` 를 `[x]` 로, 또는 그 반대로. */
+function toggleTask(view: EditorView, pos: number): void {
+  const line = view.state.doc.lineAt(pos)
+  const open = line.text.indexOf('[', pos - line.from)
+  if (open < 0) return
+  const at = line.from + open + 1
+  const done = /[xX]/.test(view.state.doc.sliceString(at, at + 1))
+  view.dispatch({ changes: { from: at, to: at + 1, insert: done ? ' ' : 'x' }, userEvent: 'input' })
 }
 
 /** 구분선(`---`). 줄 전체를 가로줄 하나로 바꾼다. */
@@ -84,8 +123,23 @@ const BLOCKS = new Set(['FencedCode', 'CodeBlock'])
 
 const FENCE = /^\s*(```|~~~)/
 
-function build(state: EditorState): DecorationSet {
+interface Preview {
+  deco: DecorationSet
+  /** 캐럿이 한 번에 건너뛰어야 하는 자리 — 할 일 네모 칸. 반쯤 지우면 문법이 깨진다. */
+  atomic: DecorationSet
+}
+
+function sorted(marks: Range<Decoration>[]): DecorationSet {
+  // 데코레이션은 자리 순서대로 넣어야 한다. 훑는 차례가 그 순서를 보장하지 않는다.
+  marks.sort((a, b) => a.from - b.from || a.value.startSide - b.value.startSide)
+  const builder = new RangeSetBuilder<Decoration>()
+  for (const mark of marks) builder.add(mark.from, mark.to, mark.value)
+  return builder.finish()
+}
+
+function build(state: EditorState): Preview {
   const marks: Range<Decoration>[] = []
+  const atomic: Range<Decoration>[] = []
   const doc = state.doc
 
   /* 캐럿이 걸친 줄들. 이 줄에서는 표시를 감추지 않는다.
@@ -164,9 +218,28 @@ function build(state: EditorState): DecorationSet {
         return
       }
 
+      /* 할 일. 글머리 목록이면 `- [ ] ` 까지 통째로, 번호 목록이면 번호는 두고 `[ ] ` 만 바꾼다.
+         끝낸 줄은 줄째 옅게 긋는다. */
+      if (node.name === 'Task') {
+        const marker = node.node.firstChild
+        const listMark = node.node.parent?.firstChild
+        if (marker?.name !== 'TaskMarker') return
+        const bullet = listMark?.name === 'ListMark' && !/\d/.test(doc.sliceString(listMark.from, listMark.to))
+        const from = bullet && listMark ? listMark.from : marker.from
+        const to = doc.sliceString(marker.to, marker.to + 1) === ' ' ? marker.to + 1 : marker.to
+        const done = /[xX]/.test(doc.sliceString(marker.from, marker.to))
+        const box = Decoration.replace({ widget: new TaskWidget(done) }).range(from, to)
+        marks.push(box)
+        atomic.push(box)
+        if (done && node.to > to) marks.push(Decoration.mark({ class: 'cm-md-done' }).range(to, node.to))
+        return
+      }
+
       // 목록 표식은 감추는 대신 점으로 바꾼다. 자리가 비면 목록으로 안 보인다.
       if (node.name === 'ListMark') {
+        // 할 일 줄의 `-` 는 위에서 네모 칸이 함께 덮는다. 겹쳐 칠하면 어긋난다.
         const text = doc.sliceString(node.from, node.to)
+        if (node.node.nextSibling?.name === 'Task' && !/\d/.test(text)) return
         const ordered = /\d/.test(text)
         if (!raw && !ordered) {
           marks.push(Decoration.replace({ widget: new BulletWidget() }).range(node.from, node.to))
@@ -182,16 +255,15 @@ function build(state: EditorState): DecorationSet {
     },
   })
 
-  // 데코레이션은 자리 순서대로 넣어야 한다. 훑는 차례가 그 순서를 보장하지 않는다.
-  marks.sort((a, b) => a.from - b.from || a.value.startSide - b.value.startSide)
-  const builder = new RangeSetBuilder<Decoration>()
-  for (const mark of marks) builder.add(mark.from, mark.to, mark.value)
-  return builder.finish()
+  return { deco: sorted(marks), atomic: sorted(atomic) }
 }
 
-export const livePreview = StateField.define<DecorationSet>({
+export const livePreview = StateField.define<Preview>({
   create: (state) => build(state),
   // 캐럿이 움직이기만 해도 다시 칠해야 한다 — 떠난 자리는 다시 감춰져야 하니까.
-  update: (deco, tr) => (tr.docChanged || tr.selection ? build(tr.state) : deco),
-  provide: (field) => EditorView.decorations.from(field),
+  update: (preview, tr) => (tr.docChanged || tr.selection ? build(tr.state) : preview),
+  provide: (field) => [
+    EditorView.decorations.from(field, (preview) => preview.deco),
+    EditorView.atomicRanges.of((view) => view.state.field(field).atomic),
+  ],
 })

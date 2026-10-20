@@ -854,6 +854,28 @@
   color: var(--text-dim);
 }
 
+/* 할 일 네모 칸 — 할 일 노트의 칸과 같은 모양이라야 같은 물건으로 읽힌다. */
+.md__live .cm-md-task {
+  display: inline-grid;
+  place-items: center;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.4em;
+  vertical-align: -0.2em;
+  line-height: 1;
+  font-size: 0.9em;
+  background: var(--face-2);
+  color: var(--text);
+  border: 2px solid;
+  border-color: var(--bevel-dark) var(--bevel-light) var(--bevel-light) var(--bevel-dark);
+  cursor: pointer;
+}
+
+.md__live .cm-md-done {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+
 /* 구분선 — 줄 하나를 가로줄로 */
 .md__live .cm-md-rule {
   display: inline-block;
@@ -1112,4 +1134,43 @@
 .imagenote__act:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* ── / 로 여는 메뉴 ─────────────────────────────────────────────────
+   확대·축소에 휩쓸리지 않게 body 에 뜬다(slashMenu.ts). 그래서 .md__live 밖에서 고른다.
+   CodeMirror 기본 꾸밈을 이겨야 하므로 body 부터 짚는다. */
+body .cm-tooltip.md-slash {
+  z-index: 600;
+  padding: 3px;
+  background: var(--face);
+  color: var(--text);
+  border: none;
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+
+body .cm-tooltip.md-slash > ul {
+  font-family: inherit;
+  max-height: 16em;
+}
+
+body .cm-tooltip.md-slash > ul > li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 3px 8px;
+}
+
+body .cm-tooltip.md-slash > ul > li[aria-selected] {
+  background: var(--sel);
+  color: var(--accent-ink);
+}
+
+body .cm-tooltip.md-slash .cm-completionDetail {
+  margin-left: 0;
+  font-style: normal;
+  color: var(--text-dim);
+}
+
+body .cm-tooltip.md-slash li[aria-selected] .cm-completionDetail {
+  color: var(--accent-ink);
 }

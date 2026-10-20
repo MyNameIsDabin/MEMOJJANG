@@ -1,7 +1,7 @@
 {
   "name": "memojjang",
   "private": true,
-  "version": "0.3.3",
+  "version": "0.3.4",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -11,6 +11,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.4",
     "@codemirror/commands": "^6.11.0",
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/language": "^6.12.4",
