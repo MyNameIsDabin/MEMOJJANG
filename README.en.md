@@ -79,7 +79,7 @@ Whatever folded away still works from the `⋯` menu.
 ## What it does
 
 - **Several canvases** — one canvas is one file. Put them wherever you want and switch with the tabs up top. Split work from personal, or keep one per project.
-  The **`+`** at the end of the tab strip asks whether to make a new one, find one in a folder, or pick from the **ones you opened recently** — that's how a closed tab comes back.
+  Drag a tab to change the order. The **`+`** at the end of the tab strip asks whether to make a new one, find one in a folder, or pick from the **ones you opened recently** — that's how a closed tab comes back.
 - **Infinite canvas** — `Ctrl`+wheel to zoom around the cursor, drag empty space or wheel-drag to move.
   Near 100% and 200% it snaps a little so pixels stay crisp.
   **The bare wheel never touches the view** — so that scrolling a long memo to its end can't drag the canvas along or make the zoom jump. Moving the view is left to dragging alone.
@@ -115,8 +115,8 @@ Whatever folded away still works from the `⋯` menu.
 - **Copy a whole note** — select and `Ctrl+C`, then `Ctrl+V` where you want it.
   It duplicates **the whole note**, not the text inside, and any stickers stuck to it come along.
   It works across canvas tabs too — images move themselves into that canvas's `.assets`.
-  When the selection is a single image note, **the picture itself rides along** on the clipboard,
-  so it pastes straight into Paint or a chat — pencil marks included.
+  When the selection is a single image note, **the picture itself** is copied instead of the note,
+  so it pastes straight into Paint or a chat — pencil marks included. Paste it back into Memojjang and it becomes an image note.
 - **Fill the screen** — press `⛶` in a note's title bar and that one note takes over the canvas.
   Resize the window and the body follows; `Esc` puts it back. The note's place and size are left alone.
 - **Finding things** — `Ctrl+F` searches titles and bodies together. The `🔍` at the left of the status bar (`Ctrl+Space`)

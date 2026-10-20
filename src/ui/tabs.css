@@ -95,6 +95,21 @@
   background: var(--canvas);
 }
 
+/* 끄는 동안에는 손 모양을 유지하고, 끌리는 탭만 살짝 띄워 보인다. */
+.tabs--dragging,
+.tabs--dragging * {
+  cursor: grabbing !important;
+}
+
+.tabs--dragging .tab:hover:not(.tab--on) {
+  background: transparent;
+}
+
+.tab--drag {
+  outline: 1px dashed var(--sel);
+  outline-offset: -1px;
+}
+
 .tab__label {
   flex: 1 1 auto;
   min-width: 0;
@@ -110,7 +125,22 @@
   text-align: left;
 }
 
-.tab--on .tab__label {
+.tab--on /* 끄는 동안에는 손 모양을 유지하고, 끌리는 탭만 살짝 띄워 보인다. */
+.tabs--dragging,
+.tabs--dragging * {
+  cursor: grabbing !important;
+}
+
+.tabs--dragging .tab:hover:not(.tab--on) {
+  background: transparent;
+}
+
+.tab--drag {
+  outline: 1px dashed var(--sel);
+  outline-offset: -1px;
+}
+
+.tab__label {
   font-weight: 700;
 }
 

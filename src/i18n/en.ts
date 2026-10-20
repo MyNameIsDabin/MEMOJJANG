@@ -327,6 +327,7 @@ export const en: Partial<Messages> = {
 
   'toast.copiedNote': 'Note copied.',
   'toast.copiedNotes': 'Copied {n} notes.',
+  'toast.copiedImage': 'Image copied.',
   'toast.copyFailed': "Couldn't copy — {reason}",
   'toast.pasteNoteFailed': "Couldn't paste the note — {reason}",
   'toast.pasteImageFailed': "Couldn't paste the image — {reason}",

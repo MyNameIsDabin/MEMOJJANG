@@ -7,7 +7,20 @@ import { baseName } from '../platform/files'
 import { confirmAsk } from './confirm'
 import { Icon } from './Icon'
 import { t, useT } from '../i18n'
+import type { CanvasRef } from '../types'
 import './tabs.css'
+
+/** 이만큼은 움직여야 끌기로 본다. 그보다 덜 움직였으면 그냥 누른 것이다. */
+const DRAG_START = 5
+
+/** 끄는 동안 보여 줄 차례. 실제 차례는 놓을 때 한 번만 바꾼다 — 그때만 작업공간을 쓴다. */
+function reorder(list: CanvasRef[], id: string, to: number): CanvasRef[] {
+  const moving = list.find((c) => c.id === id)
+  if (!moving) return list
+  const rest = list.filter((c) => c.id !== id)
+  rest.splice(to, 0, moving)
+  return rest
+}
 
 export function CanvasTabs() {
   const canvases = useCanvases(useShallow((s) => s.canvases))
@@ -16,15 +29,63 @@ export function CanvasTabs() {
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const addRef = useRef<HTMLButtonElement>(null)
+  const stripRef = useRef<HTMLDivElement>(null)
+  const [drag, setDrag] = useState<{ id: string; to: number } | null>(null)
+  /** 끌기를 마치면 click 이 따라온다. 그건 탭을 고른 것이 아니다. */
+  const draggedRef = useRef(false)
   const say = useT()
 
+  /** 끄는 탭이 들어갈 자리. 나머지 탭 중 한가운데가 포인터보다 왼쪽에 있는 것의 수다.
+   *  나머지끼리의 차례는 끄는 동안에도 변하지 않으므로, 미리보기로 자리가 바뀌어도 그대로 맞다. */
+  const slotAt = (x: number, id: string): number => {
+    let slot = 0
+    for (const tab of stripRef.current?.querySelectorAll<HTMLElement>('[data-tab]') ?? []) {
+      if (tab.dataset.tab === id) continue
+      const box = tab.getBoundingClientRect()
+      if (x > box.left + box.width / 2) slot += 1
+    }
+    return slot
+  }
+
+  const startDrag = (e: React.PointerEvent, id: string) => {
+    if (e.button !== 0) return
+    const startX = e.clientX
+    let to: number | null = null
+    draggedRef.current = false
+
+    const onMove = (ev: PointerEvent) => {
+      if (to === null && Math.abs(ev.clientX - startX) < DRAG_START) return
+      draggedRef.current = true
+      to = slotAt(ev.clientX, id)
+      setDrag({ id, to })
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      setDrag(null)
+      if (to !== null) useCanvases.getState().moveCanvas(id, to)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }
+
+  const shown = drag ? reorder(canvases, drag.id, drag.to) : canvases
+
   return (
-    <div className="tabs">
-      <div className="tabs__strip">
-        {canvases.map((canvas) => {
+    <div className={`tabs${drag ? ' tabs--dragging' : ''}`}>
+      <div className="tabs__strip" ref={stripRef}>
+        {shown.map((canvas) => {
           const active = canvas.id === activeId
+          const dragging = drag?.id === canvas.id
           return (
-            <div key={canvas.id} className={`tab${active ? ' tab--on' : ''}`} title={canvas.path}>
+            <div
+              key={canvas.id}
+              data-tab={canvas.id}
+              className={`tab${active ? ' tab--on' : ''}${dragging ? ' tab--drag' : ''}`}
+              title={canvas.path}
+            >
               {renamingId === canvas.id ? (
                 <input
                   className="tab__rename"
@@ -50,7 +111,14 @@ export function CanvasTabs() {
                     type="button"
                     className="tab__label"
                     disabled={busy}
-                    onClick={() => void useCanvases.getState().switchTo(canvas.id)}
+                    onPointerDown={(e) => startDrag(e, canvas.id)}
+                    onClick={() => {
+                      if (draggedRef.current) {
+                        draggedRef.current = false
+                        return
+                      }
+                      void useCanvases.getState().switchTo(canvas.id)
+                    }}
                     onDoubleClick={() => setRenamingId(canvas.id)}
                   >
                     {canvas.name}

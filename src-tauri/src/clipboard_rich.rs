@@ -1,38 +1,34 @@
-//! 한 번에 두 모습으로 클립보드에 올리기.
+//! 그림을 클립보드에 제대로 올리기.
 //!
-//! 그림 노트를 `Ctrl+C` 하면 두 곳으로 갈 수 있어야 한다.
-//! - 다른 프로그램(메신저·문서)에 붙일 때는 **그림**이어야 하고,
-//! - 메모짱 안에 붙일 때는 자리·크기·획까지 살아 있는 **노트 꾸러미**여야 한다.
-//!
-//! 클립보드 플러그인의 `writeText`/`writeImage` 는 부를 때마다 클립보드를 비우고 다시 채운다.
-//! 그래서 두 번 부르면 나중 것만 남는다. 윈도우 클립보드는 원래 **한 번 열어 여러 모습**을
+//! 붙이는 프로그램마다 찾는 모습이 다르다. 윈도우 클립보드는 원래 **한 번 열어 여러 모습**을
 //! 함께 담을 수 있으니, 그 자리를 직접 쓴다.
 //!
-//! 담는 모습은 셋이다.
+//! 담는 모습은 둘이다.
 //! - `CF_DIBV5` — 그림판·한글처럼 오래된 프로그램이 찾는 것. 윈도우가 이걸로부터
 //!   `CF_DIB`·`CF_BITMAP` 을 알아서 만들어 주므로 하나만 넣어도 대부분 붙는다.
 //! - `PNG` — 크롬·디스코드처럼 요즘 프로그램이 먼저 찾는 것. 투명도가 그대로 산다.
-//! - `CF_UNICODETEXT` — 우리 노트 꾸러미. 다른 프로그램에 붙이면 그저 긴 JSON 이지만,
-//!   그림을 먼저 찾는 프로그램에서는 여기까지 오지 않는다.
+//!
+//! 예전에는 여기에 노트 꾸러미(JSON)를 글로 함께 얹었다. 그랬더니 글을 먼저 집는 프로그램에는
+//! 그림 대신 긴 JSON 이 붙었다. 그림 노트는 그림으로만 내보내고, 메모짱 안에 붙일 때도 그림으로 받는다.
 
 #[cfg(windows)]
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
-/// 그림과 노트 꾸러미를 클립보드에 함께 올린다.
+/// 그림 한 장(PNG)을 클립보드에 올린다.
 #[tauri::command]
-pub fn copy_note_with_image(text: String, base64_png: String) -> Result<(), String> {
+pub fn copy_image_rich(base64_png: String) -> Result<(), String> {
     #[cfg(windows)]
     {
         let png = STANDARD
             .decode(&base64_png)
             .map_err(|err| format!("이미지 데이터를 해석하지 못했습니다: {err}"))?;
-        windows_impl::write(&text, &png)
+        windows_impl::write(&png)
     }
     #[cfg(not(windows))]
     {
-        let _ = (text, base64_png);
-        // 부르는 쪽이 이걸 보고 예전처럼 글만 올리는 길로 되돌아간다.
-        Err("이 플랫폼에서는 한 번에 두 모습으로 올릴 수 없습니다".into())
+        let _ = base64_png;
+        // 부르는 쪽이 이걸 보고 플러그인의 writeImage 로 되돌아간다.
+        Err("이 플랫폼에서는 직접 올릴 수 없습니다".into())
     }
 }
 
@@ -46,7 +42,6 @@ mod windows_impl {
         GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE,
     };
 
-    const CF_UNICODETEXT: u32 = 13;
     const CF_DIBV5: u32 = 17;
 
     /// 어느 바이트가 무슨 색인지 마스크로 알려 준다는 뜻. 마스크는 헤더 안에 함께 적는다.
@@ -163,26 +158,23 @@ mod windows_impl {
         unsafe { RegisterClipboardFormatW(name.as_ptr()) }
     }
 
-    pub fn write(text: &str, png: &[u8]) -> Result<(), String> {
+    pub fn write(png: &[u8]) -> Result<(), String> {
         // 클립보드를 비우기 전에 굽는다. 여기서 실패하면 있던 것을 그대로 두는 편이 낫다.
         let dib = to_dib_v5(png)?;
-        let mut utf16: Vec<u16> = text.encode_utf16().collect();
-        utf16.push(0);
-        let utf16_bytes: Vec<u8> = utf16.iter().flat_map(|c| c.to_le_bytes()).collect();
 
         let _board = Board::open()?;
         if unsafe { EmptyClipboard() } == 0 {
             return Err("클립보드를 비우지 못했습니다".into());
         }
 
-        // 그림이 먼저다. 이게 실패하면 부르는 쪽이 예전 길(글만 올리기)로 되돌아간다.
+        // 이게 실패하면 부르는 쪽이 플러그인의 writeImage 로 되돌아간다.
         put(CF_DIBV5, &dib)?;
         let png_format = png_format();
         if png_format != 0 {
             // 없어도 그림은 붙는다. 되면 더 좋은 정도라 실패해도 넘어간다.
             let _ = put(png_format, png);
         }
-        put(CF_UNICODETEXT, &utf16_bytes)
+        Ok(())
     }
 }
 
@@ -214,13 +206,13 @@ mod tests {
         assert_eq!(&dib[128..132], &[255, 0, 0, 128]);
     }
 
-    /// 진짜 클립보드에 담아 보고 세 모습이 다 들어갔는지 센다.
+    /// 진짜 클립보드에 담아 보고 그림이 들어가고 글은 없는지 본다.
     ///
     /// 사람이 쓰던 클립보드를 덮어쓰기 때문에 평소에는 건너뛴다.
     /// 확인할 일이 있으면 `cargo test -- --ignored clipboard_holds` 로 부른다.
     #[test]
     #[ignore]
-    fn clipboard_holds_image_and_text() {
+    fn clipboard_holds_image_only() {
         use windows_sys::Win32::System::DataExchange::{
             CloseClipboard, IsClipboardFormatAvailable, OpenClipboard,
         };
@@ -230,14 +222,16 @@ mod tests {
             .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
             .unwrap();
 
-        super::windows_impl::write("메모짱 시험", &png).unwrap();
+        super::windows_impl::write(&png).unwrap();
 
         unsafe {
             assert!(OpenClipboard(std::ptr::null_mut()) != 0);
             // 8 = CF_DIB. 우리는 넣지 않았지만 윈도우가 CF_DIBV5 에서 만들어 준다.
-            for format in [17u32, 8, 13] {
+            for format in [17u32, 8] {
                 assert!(IsClipboardFormatAvailable(format) != 0, "형식 {format} 이 없습니다");
             }
+            // 13 = CF_UNICODETEXT. 글이 같이 있으면 글을 먼저 집는 곳에 JSON 이 붙는다.
+            assert!(IsClipboardFormatAvailable(13) == 0, "글이 함께 올라갔습니다");
             CloseClipboard();
         }
     }

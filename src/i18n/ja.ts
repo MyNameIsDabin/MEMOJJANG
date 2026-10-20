@@ -327,6 +327,7 @@ export const ja: Partial<Messages> = {
 
   'toast.copiedNote': 'ノートをコピーしました。',
   'toast.copiedNotes': 'ノート {n}枚をコピーしました。',
+  'toast.copiedImage': '画像をコピーしました。',
   'toast.copyFailed': 'コピーできませんでした — {reason}',
   'toast.pasteNoteFailed': 'ノートを貼り付けられませんでした — {reason}',
   'toast.pasteImageFailed': '画像を貼り付けられませんでした — {reason}',

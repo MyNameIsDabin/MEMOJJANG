@@ -12,21 +12,19 @@ export async function copyText(text: string): Promise<void> {
   }
 }
 
-/** 그림과 글을 **한 번에** 클립보드에 올린다. 되면 true.
+/** 윈도우 클립보드에 그림을 직접 올린다 (CF_DIBV5 + PNG). 되면 true.
  *
- *  붙이는 쪽이 무엇을 찾느냐에 따라 그림도 되고 글도 된다 — 메신저에는 그림으로,
- *  메모짱 안에는 자리·크기·획이 살아 있는 노트로 붙는다.
- *  플러그인의 writeText/writeImage 는 부를 때마다 클립보드를 비우므로 이걸 못 한다.
- *  윈도우가 아니면 false 를 돌려주고, 부르는 쪽이 예전처럼 글만 올린다. */
-export async function copyTextWithImage(text: string, png: Blob): Promise<boolean> {
-  if (!isTauri()) return false
+ *  그림 노트 Ctrl+C 와 같은 길이다 — 복사 단추나 캡처로 올린 것도 같은 모습으로 붙게 한다.
+ *  PNG 도 그대로 실어서, PNG 를 먼저 찾는 프로그램에서는 투명도가 산다.
+ *  윈도우가 아니거나 실패하면 false 를 돌려주고, 부르는 쪽이 플러그인으로 되돌아간다. */
+async function copyPngRich(png: Blob): Promise<boolean> {
   try {
     const { invoke } = await import('@tauri-apps/api/core')
     const bytes = new Uint8Array(await png.arrayBuffer())
-    await invoke('copy_note_with_image', { text, base64Png: bytesToBase64(bytes) })
+    await invoke('copy_image_rich', { base64Png: bytesToBase64(bytes) })
     return true
   } catch (err) {
-    console.warn('[clipboard] 그림까지 함께 올리지 못했습니다', err)
+    console.warn('[clipboard] 그림을 직접 올리지 못했습니다', err)
     return false
   }
 }
@@ -39,6 +37,7 @@ export async function copyImageFromUrl(url: string): Promise<void> {
 /** 그림 한 장을 클립보드에 올린다. */
 export async function copyImageBlob(blob: Blob): Promise<void> {
   if (isTauri()) {
+    if (blob.type === 'image/png' && (await copyPngRich(blob))) return
     const { writeImage } = await import('@tauri-apps/plugin-clipboard-manager')
     // 플러그인은 png 바이트를 그대로 받는다 (Cargo 의 image-png 기능 필요).
     await writeImage(new Uint8Array(await blob.arrayBuffer()))

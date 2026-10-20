@@ -10,12 +10,13 @@
  *  꾸러미 안에 그림 바이트는 싣지 않는다. 스크린샷 몇 장이면 수십 MB가 되기 때문이다.
  *  대신 어느 캔버스에서 왔는지를 적어 두고, 붙여넣을 때 그 파일을 새 캔버스로 복사해 온다.
  *
- *  다만 그림 한 장만 골랐을 때는 그림 자체도 클립보드에 함께 올린다 — 그래야 메신저나
- *  문서에 그대로 붙는다. 꾸러미도 같이 남아 있어서 메모짱 안에 붙이면 여전히 노트로 돌아온다. */
+ *  다만 그림 노트 한 장만 골랐을 때는 꾸러미 없이 **그림만** 올린다. 둘을 함께 얹었더니
+ *  글을 먼저 집는 프로그램에는 그림 대신 긴 JSON 이 붙었다. 메모짱 안에 붙여도 그림은
+ *  그림 노트로 돌아오니, 잃는 것은 자리·크기·스티커 정도다 — 덧그린 획은 구워서 함께 간다. */
 import { newId, type ImageNote, type Note, type Sticker } from '../types'
 import { useBoard } from '../store/boardStore'
 import { useCanvases } from '../store/canvasStore'
-import { copyText, copyTextWithImage } from '../platform/clipboard'
+import { copyImageBlob, copyText } from '../platform/clipboard'
 import { canvasImageUrl } from '../platform/canvasFile'
 import { imageUrl, saveImage } from '../platform/assets'
 import { flattenImage } from '../notes/flatten'
@@ -47,18 +48,11 @@ function parse(text: string): Clip | null {
   }
 }
 
-/** 그림 노트를 지금 보이는 그대로(덧그린 획까지) 한 장으로 굽는다. 안 되면 null.
- *
- *  실패해도 복사 자체는 이어 간다 — 그림이 없을 뿐, 노트 꾸러미는 그대로 간다. */
-async function renderImage(note: ImageNote): Promise<Blob | null> {
-  try {
-    const url = await imageUrl(note.file)
-    if (!url) return null
-    return await flattenImage(url, note.strokes ?? [], note.naturalW, note.naturalH)
-  } catch (err) {
-    console.warn('[clip] 그림을 함께 담지 못했습니다', err)
-    return null
-  }
+/** 그림 노트를 지금 보이는 그대로(덧그린 획까지) 한 장으로 굽는다. */
+async function renderImage(note: ImageNote): Promise<Blob> {
+  const url = await imageUrl(note.file)
+  if (!url) throw new Error(t('image.missing'))
+  return flattenImage(url, note.strokes ?? [], note.naturalW, note.naturalH)
 }
 
 /** 고른 노트를 클립보드에 담는다. 붙어 있던 스티커도 함께 간다. */
@@ -66,6 +60,17 @@ export async function copyNotes(ids: string[]): Promise<void> {
   const { notes, stickers, stickerIds } = useBoard.getState()
   const picked = ids.map((id) => notes[id]).filter(Boolean)
   if (!picked.length) return
+
+  // 여러 장이면 어느 것을 그림으로 삼을지 정할 수 없으니, 한 장일 때만 그림으로 보낸다.
+  if (picked.length === 1 && picked[0].kind === 'image') {
+    try {
+      await copyImageBlob(await renderImage(picked[0]))
+      notify(t('toast.copiedImage'))
+    } catch (err) {
+      notify(t('toast.copyFailed', { reason: describeError(err) }), 'error')
+    }
+    return
+  }
 
   const mine = new Set(picked.map((n) => n.id))
   const clip: Clip = {
@@ -77,13 +82,8 @@ export async function copyNotes(ids: string[]): Promise<void> {
       .filter((s): s is Sticker => Boolean(s?.noteId && mine.has(s.noteId))),
   }
 
-  const json = JSON.stringify(clip)
-  // 여러 장을 골랐으면 어느 것을 그림으로 삼을지 정할 수 없다. 그럴 때는 꾸러미만 간다.
-  const single = picked.length === 1 && picked[0].kind === 'image' ? picked[0] : null
-
   try {
-    const png = single ? await renderImage(single) : null
-    if (!png || !(await copyTextWithImage(json, png))) await copyText(json)
+    await copyText(JSON.stringify(clip))
     notify(plural(picked.length, 'toast.copiedNote', 'toast.copiedNotes'))
   } catch (err) {
     notify(t('toast.copyFailed', { reason: describeError(err) }), 'error')

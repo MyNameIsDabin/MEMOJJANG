@@ -343,6 +343,7 @@ export const ko = {
   /* ── 알림 ────────────────────────────────────────────────────────── */
   'toast.copiedNote': '메모지를 복사했습니다.',
   'toast.copiedNotes': '메모지 {n}장을 복사했습니다.',
+  'toast.copiedImage': '그림을 복사했습니다.',
   'toast.copyFailed': '복사하지 못했습니다 — {reason}',
   'toast.pasteNoteFailed': '메모지를 붙여넣지 못했습니다 — {reason}',
   'toast.pasteImageFailed': '이미지를 붙여넣지 못했습니다 — {reason}',

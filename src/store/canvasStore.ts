@@ -49,6 +49,8 @@ interface CanvasState {
   switchTo: (id: string) => Promise<void>
   closeCanvas: (id: string) => Promise<void>
   renameCanvas: (id: string, name: string) => void
+  /** 탭 차례를 바꾼다. to 는 옮긴 뒤의 자리다. */
+  moveCanvas: (id: string, to: number) => void
   revealActive: () => Promise<void>
 }
 
@@ -352,6 +354,16 @@ export const useCanvases = create<CanvasState>()((set, get) => {
       set((s) => ({ canvases: s.canvases.map((c) => (c.id === id ? { ...c, name: trimmed } : c)) }))
       // 이름은 파일 안에도 들어간다. 파일만 따로 옮겨도 이름이 따라가도록.
       void saveActiveCanvas().catch(() => {})
+      void persistWorkspace()
+    },
+
+    moveCanvas: (id, to) => {
+      const { canvases } = get()
+      const from = canvases.findIndex((c) => c.id === id)
+      if (from < 0 || from === to) return
+      const next = canvases.filter((c) => c.id !== id)
+      next.splice(Math.max(0, Math.min(to, next.length)), 0, canvases[from])
+      set({ canvases: next })
       void persistWorkspace()
     },
 

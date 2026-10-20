@@ -129,7 +129,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             set_close_to_tray,
             set_clipboard_watch,
-            clipboard_rich::copy_note_with_image,
+            clipboard_rich::copy_image_rich,
             set_global_hotkey,
             set_capture_hotkey,
             get_autostart,
