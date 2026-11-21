@@ -9,21 +9,48 @@ import type { MemoNote, MemoView } from '../types'
 import { useBoard } from '../store/boardStore'
 import { useSettings } from '../store/settingsStore'
 import { VIEW_LABEL, detectView } from './detect'
-import { LiveMarkdown } from './LiveMarkdown'
+import { LiveMarkdown, type LiveMarkdownHandle } from './LiveMarkdown'
 import { HtmlPreview } from './HtmlPreview'
 import { JsonView } from './JsonView'
+import { TextFlash, revealInTextarea, type TextFlashPlan } from './TextFlash'
+import { FLASH_MS, flashText, scrollIntoNote, useReveal } from './reveal'
 import { Icon } from '../ui/Icon'
 import { useT } from '../i18n'
 
 const VIEWS: MemoView[] = ['plain', 'markdown', 'code', 'json', 'html']
 
-export function MemoBody({ note }: { note: MemoNote }) {
+export function MemoBody({ note, expanded }: { note: MemoNote; expanded: boolean }) {
   const say = useT()
   const view = note.view ?? 'plain'
   const autoDetect = useSettings((s) => s.memoAutoDetect)
   const [editing, setEditing] = useState(false)
 
   const areaRef = useRef<HTMLTextAreaElement | null>(null)
+  const editorRef = useRef<LiveMarkdownHandle | null>(null)
+  const renderedRef = useRef<HTMLDivElement | null>(null)
+  const [flash, setFlash] = useState<TextFlashPlan | null>(null)
+
+  /* 찾기에서 이 노트를 골랐다. 지금 어느 보기로 그려져 있느냐에 따라 짚는 법이 다르다.
+     HTML 미리보기는 샌드박스 iframe 이라 안을 들여다볼 수 없다 — 노트로 데려오는 것까지만 한다. */
+  useReveal(note.id, expanded, ({ spot, needle, select }, show) => {
+    if (spot.field !== 'body') return
+    const area = areaRef.current
+    if (area) {
+      const plan = revealInTextarea(area, spot.at, spot.length, select, show)
+      setFlash(plan)
+      // 끄는 것은 여기서 한다. 반짝이는 사이에 보기를 바꿔 반짝임이 내려가도 상태가 남지 않게.
+      if (plan) window.setTimeout(() => setFlash((now) => (now === plan ? null : now)), FLASH_MS)
+      return
+    }
+    if (editorRef.current) {
+      editorRef.current.reveal(spot.at, spot.length, select, show)
+      return
+    }
+    // 정리해서 보여 주는 JSON 은 글자 자리가 원문과 달라, 그려진 글에서 다시 찾는다.
+    const rendered = renderedRef.current
+    const found = rendered && flashText(rendered, needle)
+    if (found) show(scrollIntoNote(found.node, found.rect))
+  })
   /** 이번 입력이 "통째로 갈아치우기" 인가. beforeinput 때 미리 봐 둔다. */
   const wholeReplace = useRef(false)
 
@@ -94,10 +121,11 @@ export function MemoBody({ note }: { note: MemoNote }) {
         />
       ) : live ? (
         <div className="memo__rendered">
-          <LiveMarkdown text={note.body} onChange={onChange} />
+          <LiveMarkdown ref={editorRef} text={note.body} onChange={onChange} />
         </div>
       ) : (
         <div
+          ref={renderedRef}
           className="memo__rendered"
           onPointerDown={(e) => {
             if (e.button === 0) e.stopPropagation()
@@ -109,6 +137,8 @@ export function MemoBody({ note }: { note: MemoNote }) {
           {view === 'html' && <HtmlPreview html={note.body} />}
         </div>
       )}
+
+      {flash && showSource && <TextFlash key={flash.key} plan={flash} onDone={() => setFlash(null)} />}
 
       <div className="memo__foot">
         <select

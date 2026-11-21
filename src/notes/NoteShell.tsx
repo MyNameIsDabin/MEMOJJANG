@@ -407,10 +407,10 @@ export function NoteShell({ id, expanded = false }: { id: string; expanded?: boo
           <NoteStickers noteId={id} />
 
           <div className="note__body">
-            {note.kind === 'todo' && <TodoBody note={note} />}
-            {note.kind === 'memo' && <MemoBody note={note} />}
+            {note.kind === 'todo' && <TodoBody note={note} expanded={expanded} />}
+            {note.kind === 'memo' && <MemoBody note={note} expanded={expanded} />}
             {note.kind === 'image' && <ImageBody note={note} />}
-            {note.kind === 'link' && <LinkBody note={note} />}
+            {note.kind === 'link' && <LinkBody note={note} expanded={expanded} />}
           </div>
 
           {!expanded &&

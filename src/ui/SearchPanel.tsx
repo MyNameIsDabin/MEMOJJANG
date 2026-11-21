@@ -1,7 +1,9 @@
-/** 보드 안 내용 찾기. 결과를 누르면 그 노트가 화면 한가운데로 온다. */
+/** 보드 안 내용 찾기. 결과를 누르면 그 노트가 화면 한가운데로 오고,
+ *  노트 안에서도 찾은 글자가 있는 데까지 굴러가 잠깐 반짝인다. */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { searchNotes } from '../actions/search'
+import { normalizeQuery, searchNotes } from '../actions/search'
 import { focusNote } from '../actions/layout'
+import { requestReveal } from '../notes/reveal'
 import { useBoard } from '../store/boardStore'
 import type { NoteKind } from '../types'
 import { Icon } from './Icon'
@@ -34,11 +36,14 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
     listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' })
   }, [active, hits.length])
 
-  const go = (index: number) => {
+  /** select 는 Enter 로 결정했을 때만 — 찾은 글자를 골라 둔 채 캐럿을 넣는다.
+   *  화살표로 훑을 때 그러면 캐럿이 노트로 가 버려 다음 화살표를 이 칸이 못 받는다. */
+  const go = (index: number, select = false) => {
     const hit = hits[index]
     if (!hit) return
     setActive(index)
     focusNote(hit.id)
+    if (hit.spot) requestReveal({ noteId: hit.id, spot: hit.spot, needle: normalizeQuery(query), select })
   }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -58,7 +63,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
     } else if (e.key === 'Enter') {
       // 화살표로 훑다가 Enter 로 결정한다. 고른 노트로 간 다음 창을 접는다.
       e.preventDefault()
-      go(active)
+      go(active, true)
       onClose()
     }
   }

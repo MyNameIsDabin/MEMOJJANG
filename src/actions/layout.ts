@@ -56,6 +56,31 @@ export function focusNote(id: string): void {
   useUi.getState().followFullscreen(id)
 }
 
+/** 화면 좌표의 네모. DOMRect 도 그대로 들어온다. */
+export interface ScreenRect {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+/** 화면 좌표로 받은 자리가 창 안에 들도록 캔버스를 민다. 이미 보이면 가만히 둔다.
+ *
+ *  노트를 한가운데 두는 것(focusNote)만으로 모자랄 때가 있다 — 노트가 창보다 크면
+ *  노트 안에서 찾은 글자가 창 밖에 있을 수 있다. 확대율은 그대로 둔다. */
+export function bringIntoView(rect: ScreenRect): void {
+  const top = PAD.top
+  const bottom = window.innerHeight - PAD.bottom
+  const left = PAD.left
+  const right = window.innerWidth - PAD.right
+
+  // 밀어야 하는 방향만 민다. 이미 보이는 쪽까지 가운데로 끌면 눈이 따라가다 놓친다.
+  const dy = rect.top < top || rect.bottom > bottom ? (top + bottom) / 2 - (rect.top + rect.bottom) / 2 : 0
+  const dx = rect.left < left || rect.right > right ? (left + right) / 2 - (rect.left + rect.right) / 2 : 0
+  if (!dx && !dy) return
+  useBoard.getState().setViewport((vp) => ({ ...vp, x: vp.x + dx, y: vp.y + dy }))
+}
+
 /** 골라 둔 노트를 화면 한가운데로. 여러 장이면 그 무리의 한가운데를 잡는다.
  *
  *  확대율은 건드리지 않는다 — 스페이스바로 "지금 보던 크기 그대로, 여기만 보자" 하는 동작이라

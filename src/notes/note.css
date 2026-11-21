@@ -1174,3 +1174,74 @@ body .cm-tooltip.md-slash .cm-completionDetail {
 body .cm-tooltip.md-slash li[aria-selected] .cm-completionDetail {
   color: var(--accent-ink);
 }
+
+/* ── 찾은 자리 ─────────────────────────────────────────────────────── */
+
+/* 찾기에서 고른 글자를 잠깐 깜빡인다. 서서히 옅어지게 하지 않고 끊어서 켜고 끈다 —
+   도트 화면에서 흐려지는 것은 번져 보인다. 길이는 reveal.ts 의 FLASH_MS 와 맞춘다. */
+@keyframes find-blink {
+  0%,
+  30%,
+  60%,
+  100% {
+    background-color: color-mix(in srgb, var(--sel) 45%, transparent);
+    box-shadow: var(--find-ring);
+  }
+  15%,
+  45% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.findflash__box,
+.md__live .cm-find-flash,
+.found-flash {
+  --find-ring: 0 0 0 2px var(--sel);
+  animation: find-blink 1.8s steps(1, end) forwards;
+}
+
+/* 줄 통째로 반짝일 때는 테두리를 안으로 그린다. 밖으로 그리면 이웃 줄을 덮는다. */
+.found-flash {
+  --find-ring: inset 0 0 0 2px var(--sel);
+}
+
+/* 접힌 줄에 걸쳐도 줄마다 테두리가 온전히 그려지게 한다. */
+.md__live .cm-find-flash {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* 글칸(textarea) 위에 겹치는 틀. 글칸 안쪽과 같은 자리·크기로 놓이고, 글칸을 굴리면 안쪽 층이 따라간다. */
+.findflash {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.findflash__layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.findflash__box {
+  position: absolute;
+}
+
+/* 정리해서 보여 주는 JSON 처럼 그려 놓은 글. 깜빡이게는 못 하고 잠깐 칠만 한다. */
+::highlight(memo-find) {
+  background-color: var(--sel);
+  color: var(--accent-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .findflash__box,
+  .md__live .cm-find-flash,
+  .found-flash {
+    animation: none;
+    background-color: color-mix(in srgb, var(--sel) 45%, transparent);
+    box-shadow: var(--find-ring);
+  }
+}

@@ -55,6 +55,8 @@ countdown and a progress bar — `4 days left`, `20 minutes left`. Drag the hand
 ### When there are dozens of notes, search
 
 `Ctrl+F` searches titles and bodies together, and picking a result flies that note to the middle of the screen.
+In a long note it also scrolls to the matching words and makes them blink for a moment.
+Pick with `Enter` and the cursor lands there with the words selected, ready to edit.
 
 ![The search panel with "우유" typed in, matching one to-do note and one memo](docs/search.png)
 
@@ -217,6 +219,7 @@ src/
     LiveMarkdown.tsx    the in-place editor (where CodeMirror is mounted)
     livePreview.ts      the decoration that hides markup and grows headings
     slashMenu.ts        the / menu at the start of a line — picks put the markdown in for you
+    reveal.ts           showing a search match inside its note — scroll there and blink
     detect.ts           guessing a view from pasted text (built-in rules + your own)
   actions/
     capture.ts          starting a capture — same path from the menu and the shortcut

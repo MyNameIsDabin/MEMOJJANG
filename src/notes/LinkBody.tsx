@@ -1,16 +1,27 @@
 /** 자주 가는 곳을 모아 두는 메모지. 누르면 기본 브라우저로 열린다. */
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { newId, type LinkItem, type LinkNote } from '../types'
 import { useBoard } from '../store/boardStore'
 import { openExternal } from '../platform/browser'
 import { Icon } from '../ui/Icon'
 import { Favicon } from './Favicon'
+import { flashElement, scrollIntoNote, useReveal } from './reveal'
 import { hostOf, normalizeUrl } from '../utils/url'
 import { useT } from '../i18n'
 
-export function LinkBody({ note }: { note: LinkNote }) {
+export function LinkBody({ note, expanded }: { note: LinkNote; expanded: boolean }) {
   const say = useT()
   const [editingId, setEditingId] = useState<string | null>(null)
+  const listRef = useRef<HTMLDivElement | null>(null)
+
+  // 찾기에서 골랐다. 주소로 걸렸어도 화면에는 별칭만 보이므로 글자가 아니라 줄을 반짝인다.
+  useReveal(note.id, expanded, ({ spot }, show) => {
+    if (spot.field !== 'item') return
+    const row = listRef.current?.querySelector<HTMLElement>(`[data-item="${CSS.escape(spot.itemId)}"]`)
+    if (!row) return
+    show(scrollIntoNote(row, row.getBoundingClientRect()))
+    flashElement(row)
+  })
 
   const write = (items: LinkItem[]) => useBoard.getState().patchNote(note.id, { items })
 
@@ -37,10 +48,10 @@ export function LinkBody({ note }: { note: LinkNote }) {
 
   return (
     <div className="links">
-      <div className="links__list">
+      <div className="links__list" ref={listRef}>
         {note.items.map((item) =>
           editingId === item.id ? (
-            <div key={item.id} className="links__edit">
+            <div key={item.id} className="links__edit" data-item={item.id}>
               <input
                 className="links__input"
                 value={item.label}
@@ -74,7 +85,7 @@ export function LinkBody({ note }: { note: LinkNote }) {
               </div>
             </div>
           ) : (
-            <div key={item.id} className="links__row">
+            <div key={item.id} className="links__row" data-item={item.id}>
               <button
                 type="button"
                 className="links__go"

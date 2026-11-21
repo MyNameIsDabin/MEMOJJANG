@@ -6,14 +6,30 @@ import { useBoard } from '../store/boardStore'
 import { Icon } from '../ui/Icon'
 import { describeDue, nextTickDelay } from './due'
 import { DuePopup } from './DuePopup'
+import { flashElement, scrollIntoNote, useReveal } from './reveal'
 import { useT } from '../i18n'
 
-export function TodoBody({ note }: { note: TodoNote }) {
+export function TodoBody({ note, expanded }: { note: TodoNote; expanded: boolean }) {
   const say = useT()
   const inputs = useRef(new Map<string, HTMLTextAreaElement>())
   const rows = useRef(new Map<string, HTMLElement>())
   /** 방금 만든 항목으로 커서를 옮기기 위한 예약. 렌더 뒤에 처리된다. */
   const focusNext = useRef<string | null>(null)
+
+  // 찾기에서 골랐다. 항목은 짧으니 그 줄을 통째로 데려와 반짝인다.
+  useReveal(note.id, expanded, ({ spot, select }, show) => {
+    if (spot.field !== 'item') return
+    const row = rows.current.get(spot.itemId)
+    if (!row) return
+    const input = inputs.current.get(spot.itemId)
+    if (select && input) {
+      // preventScroll 이 없으면 브라우저가 캔버스(.board)까지 굴린다.
+      input.focus({ preventScroll: true })
+      input.setSelectionRange(spot.at, spot.at + spot.length)
+    }
+    show(scrollIntoNote(row, row.getBoundingClientRect()))
+    flashElement(row)
+  })
 
   const [dueFor, setDueFor] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
